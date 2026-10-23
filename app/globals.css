@@ -1,0 +1,272 @@
+@import "tailwindcss";
+
+/* Tema sınıfla değişir (açık / koyu / sistem), prefers-color-scheme ile değil:
+   kullanıcı Ayarlar'dan seçtiğinde sistemi ezebilmesi gerekiyor. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ───────────────────────────────────────────────────────────────
+   "Ayva" — sabah ışığı almış bir defter sayfası.
+   Krem değil, yeşile çalan soluk kağıt. Siyah değil, derin çam mürekkebi.
+   Vurgu: ayva altını — sadece işaretlerde, ilerlemede, bugünün ışığında.
+   ─────────────────────────────────────────────────────────────── */
+:root {
+  --paper: #e9ece5;
+  --surface: #f6f8f3;
+  --surface-raised: #fdfdfb;
+  --surface-sunk: #e1e6d9;
+
+  --ink: #1c2b26;
+  --ink-muted: #5c6d64;
+  --ink-faint: #8b9a90;
+
+  --rule: #d3dacd;
+  --rule-strong: #bcc6b6;
+  /* Sayfanın kendi çizgileri kenarlıklardan ayrı: koyu temada kenarlık kadar
+     kontrast olunca ızgara gibi bağırıyorlar. */
+  --rule-faint: #d7ddd1;
+
+  --quince: #b8821f;
+  --quince-soft: #e3cd98;
+  --quince-wash: #f8f0d8;
+
+  --moss: #5b7a45;
+  --brick: #a8564a;
+
+  /* Kategori ailesi: hepsi orta ton, benzer açıklıkta — kimse bağırmıyor. */
+  --cat-petrol: #2d6a68;
+  --cat-plum: #76496b;
+  --cat-ochre: #9c6a1c;
+  --cat-moss: #56753f;
+  --cat-clay: #9d5f4f;
+  --cat-slate: #4a648a;
+
+  /* Bugünün üzerine düşen ışık */
+  --today-light: #fbf4e2;
+  --today-edge: #e8d7a8;
+
+  --lift: 0 1px 2px rgb(28 43 38 / 0.05), 0 8px 24px -12px rgb(28 43 38 / 0.18);
+  --lift-strong: 0 2px 4px rgb(28 43 38 / 0.06), 0 18px 48px -16px rgb(28 43 38 / 0.26);
+
+  /* Çizgili sayfanın satır aralığı */
+  --rule-step: 2.125rem;
+}
+
+.dark {
+  --paper: #171f1c;
+  --surface: #1e2823;
+  --surface-raised: #26322c;
+  --surface-sunk: #121917;
+
+  --ink: #e4e9df;
+  --ink-muted: #9caea3;
+  --ink-faint: #6c7d74;
+
+  --rule: #2e3a34;
+  --rule-strong: #3f4d45;
+  --rule-faint: #242d28;
+
+  --quince: #dcac51;
+  --quince-soft: #6d5527;
+  --quince-wash: #2b2a1e;
+
+  --moss: #86a86a;
+  --brick: #cc8276;
+
+  --cat-petrol: #5aa3a0;
+  --cat-plum: #b183a7;
+  --cat-ochre: #d2a44f;
+  --cat-moss: #8fb173;
+  --cat-clay: #cf9384;
+  --cat-slate: #87a3c8;
+
+  --today-light: #2c3025;
+  --today-edge: #4d4729;
+
+  --lift: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.6);
+  --lift-strong: 0 2px 4px rgb(0 0 0 / 0.35), 0 18px 48px -16px rgb(0 0 0 / 0.7);
+}
+
+@theme inline {
+  --color-paper: var(--paper);
+  --color-surface: var(--surface);
+  --color-raised: var(--surface-raised);
+  --color-sunk: var(--surface-sunk);
+
+  --color-ink: var(--ink);
+  --color-muted: var(--ink-muted);
+  --color-faint: var(--ink-faint);
+
+  --color-rule: var(--rule);
+  --color-rule-strong: var(--rule-strong);
+
+  --color-quince: var(--quince);
+  --color-quince-soft: var(--quince-soft);
+  --color-quince-wash: var(--quince-wash);
+
+  --color-moss: var(--moss);
+  --color-brick: var(--brick);
+
+  --color-today-light: var(--today-light);
+  --color-today-edge: var(--today-edge);
+
+  --font-display: var(--font-fraunces), Georgia, serif;
+  --font-sans: var(--font-hanken), ui-sans-serif, system-ui, sans-serif;
+
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1.2;
+  --text-xs: 0.75rem;
+  --text-xs--line-height: 1.3;
+  --text-sm: 0.8125rem;
+  --text-sm--line-height: 1.4;
+  --text-base: 0.9375rem;
+  --text-base--line-height: 1.55;
+  --text-lg: 1.0625rem;
+  --text-lg--line-height: 1.5;
+  --text-xl: 1.25rem;
+  --text-xl--line-height: 1.35;
+  --text-2xl: 1.625rem;
+  --text-2xl--line-height: 1.2;
+  --text-3xl: 2.25rem;
+  --text-3xl--line-height: 1.1;
+  --text-4xl: 3rem;
+  --text-4xl--line-height: 1;
+
+  --radius-xs: 0.25rem;
+  --radius-sm: 0.375rem;
+  --radius-md: 0.625rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.5rem;
+
+  --shadow-lift: var(--lift);
+  --shadow-lift-strong: var(--lift-strong);
+
+  --ease-settle: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@layer base {
+  * {
+    border-color: var(--rule);
+  }
+
+  html {
+    height: 100%;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body {
+    height: 100%;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--font-sans);
+    font-size: var(--text-base);
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Rakamlar sayfanın süsü: tarihler, sayaçlar, yüzdeler Fraunces'te. */
+  .numerals {
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+  }
+
+  h1,
+  h2,
+  h3 {
+    font-family: var(--font-display);
+    font-weight: 500;
+    letter-spacing: -0.015em;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--quince);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
+
+  button,
+  [role="button"] {
+    cursor: pointer;
+  }
+
+  button:disabled {
+    cursor: not-allowed;
+  }
+
+  input,
+  textarea,
+  select,
+  button {
+    font: inherit;
+    color: inherit;
+  }
+
+  ::placeholder {
+    color: var(--ink-faint);
+  }
+
+  ::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background: var(--rule-strong);
+    border: 3px solid transparent;
+    background-clip: padding-box;
+    border-radius: 99px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--ink-faint);
+    border: 3px solid transparent;
+    background-clip: padding-box;
+  }
+}
+
+@layer components {
+  /* Yazılmamış kalan yer hâlâ çizgisini gösterir — gerçek bir defter gibi.
+     Görev kartları opak, çizgilerin üstüne "yazılmış" oluyorlar. */
+  .ruled {
+    background-image: repeating-linear-gradient(
+      to bottom,
+      transparent 0,
+      transparent calc(var(--rule-step) - 1px),
+      var(--rule-faint) calc(var(--rule-step) - 1px),
+      var(--rule-faint) var(--rule-step)
+    );
+    background-position: 0 0;
+  }
+
+  /* Bugünün sütunu kutulanmıyor — üzerine ışık düşüyor. Işık yukarıda güçlü,
+     aşağı doğru zayıflıyor ama hiç bitmiyor: sütun baştan sona bugün. */
+  .today-light {
+    background-image: linear-gradient(
+      to bottom,
+      var(--today-light) 0%,
+      color-mix(in oklab, var(--today-light) 72%, var(--surface)) 20%,
+      color-mix(in oklab, var(--today-light) 38%, var(--surface)) 52%,
+      color-mix(in oklab, var(--today-light) 22%, var(--surface)) 100%
+    );
+  }
+
+  .hairline-r {
+    box-shadow: inset -1px 0 0 0 var(--rule);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

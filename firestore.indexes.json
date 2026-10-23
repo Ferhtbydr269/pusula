@@ -1,0 +1,5 @@
+{
+  "comment": "Uygulamanın yaptığı her sorgu tek bir eşitlik/in filtresi kullanıyor (date in [...], documentId() in [...], categoryId ==, seriesId ==) ve sıralama arayüzde yapılıyor. Firestore bunları otomatik tek alan indeksleriyle karşılıyor, bu yüzden bileşik indekse gerek yok. Sorgu değişip Firestore konsolu indeks isterse, oluşturduğu tanımı buraya ekleyin.",
+  "indexes": [],
+  "fieldOverrides": []
+}
