@@ -124,7 +124,7 @@ export function AuthScreen() {
   const local = mode === "local";
 
   const [name, setName] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<{ text: string; code: string } | null>(null);
   const [busy, setBusy] = useState(false);
 
   const run = async (fn: () => Promise<void>) => {
@@ -135,9 +135,13 @@ export function AuthScreen() {
     } catch (e) {
       const code =
         e && typeof e === "object" && "code" in e
-          ? (e as { code: unknown }).code
-          : undefined;
-      setError(authErrorMessage(code));
+          ? String((e as { code: unknown }).code)
+          : "";
+      /* Ham kodu da gösteriyoruz. Sağlayıcı yapılandırması bozulduğunda
+         (Apple anahtarı, Team ID, yetkili alan adı) kullanıcı dostu cümle
+         tek başına çıkmaza sokuyor; kodu görmek sorunu bulmanın en kısa yolu. */
+      console.error("Pusula giriş hatası:", e);
+      setError({ text: authErrorMessage(code), code });
     } finally {
       setBusy(false);
     }
@@ -229,15 +233,20 @@ export function AuthScreen() {
 
             <AnimatePresence>
               {error && (
-                <motion.p
+                <motion.div
                   initial={{ opacity: 0, y: -4 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                   role="alert"
                   className="mt-5 rounded-md border border-brick/35 bg-brick/8 px-3 py-2 text-xs leading-relaxed text-brick"
                 >
-                  {error}
-                </motion.p>
+                  <p>{error.text}</p>
+                  {error.code && (
+                    <p className="mt-1 font-mono text-2xs break-all text-brick/70">
+                      {error.code}
+                    </p>
+                  )}
+                </motion.div>
               )}
             </AnimatePresence>
           </div>

@@ -98,6 +98,13 @@ export function authErrorMessage(code: unknown): string {
       return "Bu Apple hesabı zaten mevcut Pusula hesabına bağlı.";
     case "auth/no-current-user":
       return "Apple hesabı bağlamak için önce mevcut hesabınla giriş yapmalısın.";
+    case "auth/invalid-credential":
+    case "auth/internal-error":
+      /* Apple'da bu kod neredeyse her zaman token takasının başarısız olması
+         demek: Firebase, Apple'dan dönen kodu Team ID + Key ID + .p8 özel
+         anahtarıyla imzalayıp değiştiremiyor. Kullanıcı Apple ekranını
+         onayladıktan sonra patlamasının sebebi bu. */
+      return "Giriş sağlayıcısıyla bağlantı kurulamadı. Apple için Firebase'deki Team ID, Key ID ve .p8 anahtarının doğru olduğunu kontrol et.";
     case "auth/too-many-requests":
       return "Çok fazla denendi. Biraz bekleyip tekrar dene.";
     case "auth/network-request-failed":
