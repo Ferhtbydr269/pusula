@@ -2,7 +2,7 @@
 
 import { motion } from "framer-motion";
 import { Flame } from "lucide-react";
-import type { DailyTracking, ISODate } from "@/lib/data/types";
+import type { DailyTracking, ISODate, Task } from "@/lib/data/types";
 import type { WeekSummary } from "@/lib/store/PlannerProvider";
 import {
   dayNameLong,
@@ -24,6 +24,7 @@ interface WeekSummarySheetProps {
   dates: ISODate[];
   summary: WeekSummary;
   trackingByDate: Record<ISODate, DailyTracking>;
+  tasksByDate: Record<ISODate, Task[]>;
   waterGoal: number;
 }
 
@@ -78,6 +79,7 @@ export function WeekSummarySheet({
   dates,
   summary,
   trackingByDate,
+  tasksByDate,
   waterGoal,
 }: WeekSummarySheetProps) {
   return (
@@ -193,37 +195,42 @@ export function WeekSummarySheet({
           </div>
         </div>
 
-        {/* ── günlere göre dağılım ── */}
+        {/* ── günlere göre tamamlanma ── */}
         <div className="border-t border-rule pt-6">
           <p className="text-sm text-muted">Günlere göre</p>
           <div className="mt-3 flex flex-col gap-2">
             {dates.map((date) => {
-              const t = trackingByDate[date];
+              const tasks = tasksByDate[date] ?? [];
+              const done = tasks.filter((t) => t.status === "done").length;
+              const ratio = tasks.length ? done / tasks.length : 0;
               return (
                 <div key={date} className="flex items-center gap-3">
-                  <span className="numerals w-10 shrink-0 text-xs text-muted">
+                  <span
+                    className={cn(
+                      "numerals w-14 shrink-0 text-xs whitespace-nowrap",
+                      isToday(date) ? "text-quince" : "text-muted",
+                    )}
+                  >
                     {dayNameShort(date)} {dayOfMonth(date)}
                   </span>
                   <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-sunk">
                     <motion.div
-                      className="h-full rounded-full bg-quince"
-                      initial={{ width: 0 }}
-                      animate={{
-                        width: `${
-                          t ? Math.min(100, (t.waterGlasses / waterGoal) * 100) : 0
-                        }%`,
+                      className="h-full rounded-full"
+                      style={{
+                        background: ratio === 1 ? "var(--moss)" : "var(--quince)",
                       }}
+                      initial={{ width: 0 }}
+                      animate={{ width: `${ratio * 100}%` }}
                       transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
                     />
                   </div>
-                  <span className="numerals w-8 shrink-0 text-right text-2xs text-faint">
-                    {t?.waterGlasses ?? 0}
+                  <span className="numerals w-10 shrink-0 text-right text-2xs text-faint">
+                    {tasks.length ? `${done}/${tasks.length}` : "—"}
                   </span>
                 </div>
               );
             })}
           </div>
-          <p className="mt-2 text-2xs text-faint">su, bardak</p>
         </div>
       </div>
     </Sheet>

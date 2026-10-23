@@ -78,9 +78,11 @@ export function Header({
   }, [menuOpen]);
 
   return (
-    <header className="flex shrink-0 items-start justify-between gap-4 px-1 pb-3 sm:px-2">
+    // Dar ekranda selamlama kırpılmasın diye hafta gezinmesi alt satıra
+    // iniyor; sm'den itibaren üçü tek satırda.
+    <header className="flex shrink-0 flex-wrap items-center justify-between gap-x-3 gap-y-1 px-1 pb-3 sm:flex-nowrap sm:items-start sm:gap-4 sm:px-2">
       {/* ── selamlama ── */}
-      <div className="min-w-0">
+      <div className="order-1 min-w-0 flex-1 sm:flex-none">
         <h1 className="flex items-center gap-2 text-lg leading-tight sm:text-xl">
           <span className="text-quince">
             <GreetingIcon icon={greeting.icon} />
@@ -95,7 +97,7 @@ export function Header({
       </div>
 
       {/* ── hafta gezinmesi ── */}
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="order-3 flex w-full shrink-0 items-center justify-center gap-1 sm:order-2 sm:w-auto">
         <button
           type="button"
           onClick={onPrev}
@@ -137,7 +139,7 @@ export function Header({
       </div>
 
       {/* ── haftalık ilerleme + profil ── */}
-      <div className="flex shrink-0 items-center gap-1">
+      <div className="order-2 flex shrink-0 items-center gap-1 sm:order-3">
         <button
           type="button"
           onClick={onOpenSummary}

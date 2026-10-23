@@ -209,6 +209,9 @@ export function TaskRow({
           <div
             {...attributes}
             {...listeners}
+            // dnd-kit buraya role="button" koyuyor; adını kendimiz veriyoruz
+            // ki ekran okuyucuda adsız bir düğme olarak durmasın.
+            aria-label={`${task.title} — sürükleyerek başka güne taşı`}
             // Sürüklemek için başlığa basılı tutmak yeterli; ayrı tutamaç yok.
             className="cursor-grab touch-none active:cursor-grabbing"
           >
@@ -266,8 +269,10 @@ export function TaskRow({
         </div>
 
         {/* Eylemler akışta yer kaplamıyor: dar sütunda bütün genişlik başlığın
-            olsun diye üstte, sadece üzerine gelince beliriyorlar. */}
-        <div className="pointer-events-none absolute top-1 right-1 flex items-center gap-0.5 rounded-md bg-raised/95 px-0.5 opacity-0 shadow-lift transition-opacity duration-150 group-hover/task:pointer-events-auto group-hover/task:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100">
+            olsun diye üstte, sadece üzerine gelince beliriyorlar.
+            Dokunmatik ekranda "üzerine gelmek" diye bir şey yok — orada
+            sürekli görünürler, yoksa görev hiç düzenlenemezdi. */}
+        <div className="pointer-events-none absolute top-1 right-1 flex items-center gap-0.5 rounded-md bg-raised/95 px-0.5 opacity-0 shadow-lift transition-opacity duration-150 group-hover/task:pointer-events-auto group-hover/task:opacity-100 focus-within:pointer-events-auto focus-within:opacity-100 pointer-coarse:pointer-events-auto pointer-coarse:opacity-100">
           <button
             type="button"
             onClick={onPostpone}

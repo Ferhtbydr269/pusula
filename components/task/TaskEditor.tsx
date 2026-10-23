@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Repeat, Trash2 } from "lucide-react";
 import type {
   Category,
@@ -44,8 +44,15 @@ function Label({ children, htmlFor }: { children: string; htmlFor?: string }) {
 const fieldClass =
   "w-full rounded-md border border-rule bg-raised px-3 py-2 text-sm outline-none transition-colors focus:border-quince";
 
+/** Panelin kimliği: değişince bileşen baştan kurulur, form kendiliğinden sıfırlanır. */
+export function editorKey(target: EditorTarget): string {
+  return target.kind === "edit" ? `edit:${target.task.id}` : `new:${target.date}`;
+}
+
 interface TaskEditorProps {
-  target: EditorTarget | null;
+  /** Panel açıkken hep dolu; kapanma animasyonu bitene kadar da öyle kalır. */
+  target: EditorTarget;
+  open: boolean;
   categories: Category[];
   seriesList: Series[];
   onClose(): void;
@@ -78,6 +85,7 @@ interface TaskEditorProps {
 
 export function TaskEditor({
   target,
+  open,
   categories,
   seriesList,
   onClose,
@@ -87,47 +95,32 @@ export function TaskEditor({
   onDeleteTask,
   onDeleteSeries,
 }: TaskEditorProps) {
-  const [title, setTitle] = useState("");
-  const [note, setNote] = useState("");
-  const [categoryId, setCategoryId] = useState<string | null>(null);
-  const [date, setDate] = useState<ISODate>(todayISO());
-  const [startTime, setStartTime] = useState("");
-  const [duration, setDuration] = useState("");
-  const [priority, setPriority] = useState<"normal" | "high">("normal");
+  const editing = target.kind === "edit" ? target.task : null;
+
+  // Form alanları hedeften bir kez türetiliyor; başka bir göreve geçildiğinde
+  // bileşen `editorKey` sayesinde zaten baştan kuruluyor.
+  const [title, setTitle] = useState(editing?.title ?? "");
+  const [note, setNote] = useState(editing?.note ?? "");
+  const [categoryId, setCategoryId] = useState<string | null>(
+    editing?.categoryId ?? null,
+  );
+  const [date, setDate] = useState<ISODate>(
+    editing?.date ?? (target.kind === "new" ? target.date : todayISO()),
+  );
+  const [startTime, setStartTime] = useState(editing?.startTime ?? "");
+  const [duration, setDuration] = useState(
+    editing?.durationMin ? String(editing.durationMin) : "",
+  );
+  const [priority, setPriority] = useState<"normal" | "high">(
+    editing?.priority ?? "normal",
+  );
   const [recurrenceKind, setRecurrenceKind] = useState<RecurrenceKind>("none");
   const [recurrenceDays, setRecurrenceDays] = useState<Weekday[]>([]);
   const [saving, setSaving] = useState(false);
 
-  const editing = target?.kind === "edit" ? target.task : null;
   const series = editing?.seriesId
     ? seriesList.find((s) => s.id === editing.seriesId)
     : undefined;
-
-  useEffect(() => {
-    if (!target) return;
-    if (target.kind === "edit") {
-      const t = target.task;
-      setTitle(t.title);
-      setNote(t.note);
-      setCategoryId(t.categoryId);
-      setDate(t.date);
-      setStartTime(t.startTime ?? "");
-      setDuration(t.durationMin ? String(t.durationMin) : "");
-      setPriority(t.priority);
-      setRecurrenceKind("none");
-      setRecurrenceDays([]);
-    } else {
-      setTitle("");
-      setNote("");
-      setCategoryId(null);
-      setDate(target.date);
-      setStartTime("");
-      setDuration("");
-      setPriority("normal");
-      setRecurrenceKind("none");
-      setRecurrenceDays([]);
-    }
-  }, [target]);
 
   const buildRecurrence = (): Recurrence | null => {
     switch (recurrenceKind) {
@@ -145,7 +138,7 @@ export function TaskEditor({
   const canSave = title.trim().length > 0 && !saving;
 
   const save = async () => {
-    if (!target || !canSave) return;
+    if (!canSave) return;
     setSaving(true);
     try {
       const cleanTitle = title.trim();
@@ -189,7 +182,7 @@ export function TaskEditor({
 
   return (
     <Sheet
-      open={Boolean(target)}
+      open={open}
       onClose={onClose}
       title={editing ? "Görevi düzenle" : "Yeni görev"}
       subtitle={editing ? longDateLabel(editing.date) : undefined}

@@ -9,7 +9,12 @@ import { greeting, isToday, todayISO } from "@/lib/date";
 import { useToast } from "@/components/ui/Toast";
 import { Header } from "./Header";
 import { WeekView } from "@/components/week/WeekView";
-import { TaskEditor, type EditorTarget } from "@/components/task/TaskEditor";
+import {
+  TaskEditor,
+  editorKey,
+  type EditorTarget,
+} from "@/components/task/TaskEditor";
+import { emptyTracking } from "@/lib/data/defaults";
 import { DaySheet } from "@/components/tracking/DaySheet";
 import { WeekSummarySheet } from "@/components/summary/WeekSummarySheet";
 import { SettingsSheet } from "@/components/settings/SettingsSheet";
@@ -34,8 +39,28 @@ export function Planner() {
   const planner = usePlanner();
   const { toast } = useToast();
 
-  const [editorTarget, setEditorTarget] = useState<EditorTarget | null>(null);
-  const [daySheetDate, setDaySheetDate] = useState<ISODate | null>(null);
+  /* Paneller "hedef + açık mı" ikilisiyle tutuluyor: kapanırken hedef yerinde
+     kaldığı için kayarak çıkma animasyonu boş bir panelle oynamıyor.
+     `seq` her açılışta artıyor; böylece aynı görev ikinci kez açıldığında
+     panel baştan kuruluyor ve vazgeçilen yazılar formda kalmıyor. */
+  const [editor, setEditor] = useState<{
+    target: EditorTarget;
+    open: boolean;
+    seq: number;
+  } | null>(null);
+  const [daySheet, setDaySheet] = useState<{
+    date: ISODate;
+    open: boolean;
+    seq: number;
+  } | null>(null);
+
+  const openEditor = useCallback((target: EditorTarget) => {
+    setEditor((prev) => ({ target, open: true, seq: (prev?.seq ?? 0) + 1 }));
+  }, []);
+
+  const openDaySheet = useCallback((date: ISODate) => {
+    setDaySheet((prev) => ({ date, open: true, seq: (prev?.seq ?? 0) + 1 }));
+  }, []);
   const [summaryOpen, setSummaryOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [lastCategoryId, setLastCategoryId] = useState<string | null>(null);
@@ -178,10 +203,10 @@ export function Planner() {
         onAdd={handleQuickAdd}
         onToggle={(task) => void toggleDone(task)}
         onPostpone={(task) => void handlePostpone(task)}
-        onEdit={(task) => setEditorTarget({ kind: "edit", task })}
+        onEdit={(task) => openEditor({ kind: "edit", task })}
         onDelete={(task) => void handleDelete(task)}
         onTracking={(date, patch) => void setTracking(date, patch)}
-        onOpenDay={setDaySheetDate}
+        onOpenDay={openDaySheet}
         onMove={(task, date) => void moveTask(task, date)}
       />
 
@@ -194,7 +219,7 @@ export function Planner() {
         <button
           type="button"
           onClick={() =>
-            setEditorTarget({
+            openEditor({
               kind: "new",
               date: dates.find(isToday) ?? selectedDay ?? todayISO(),
             })
@@ -205,25 +230,33 @@ export function Planner() {
         </button>
       </footer>
 
-      <TaskEditor
-        target={editorTarget}
-        categories={categories}
-        seriesList={seriesList}
-        onClose={() => setEditorTarget(null)}
-        onSaveTask={editTask}
-        onCreateTask={(input) => addTask(input)}
-        onCreateSeries={addSeries}
-        onDeleteTask={handleDelete}
-        onDeleteSeries={removeSeries}
-      />
+      {editor && (
+        <TaskEditor
+          key={`${editorKey(editor.target)}#${editor.seq}`}
+          target={editor.target}
+          open={editor.open}
+          categories={categories}
+          seriesList={seriesList}
+          onClose={() => setEditor((e) => (e ? { ...e, open: false } : null))}
+          onSaveTask={editTask}
+          onCreateTask={(input) => addTask(input)}
+          onCreateSeries={addSeries}
+          onDeleteTask={handleDelete}
+          onDeleteSeries={removeSeries}
+        />
+      )}
 
-      <DaySheet
-        date={daySheetDate}
-        tracking={daySheetDate ? trackingByDate[daySheetDate] : null}
-        settings={settings}
-        onClose={() => setDaySheetDate(null)}
-        onChange={(date, patch) => void setTracking(date, patch)}
-      />
+      {daySheet && (
+        <DaySheet
+          key={`${daySheet.date}#${daySheet.seq}`}
+          date={daySheet.date}
+          tracking={trackingByDate[daySheet.date] ?? emptyTracking(daySheet.date)}
+          open={daySheet.open}
+          settings={settings}
+          onClose={() => setDaySheet((d) => (d ? { ...d, open: false } : null))}
+          onChange={(date, patch) => void setTracking(date, patch)}
+        />
+      )}
 
       <WeekSummarySheet
         open={summaryOpen}
@@ -231,6 +264,7 @@ export function Planner() {
         dates={dates}
         summary={summary}
         trackingByDate={trackingByDate}
+        tasksByDate={tasksByDate}
         waterGoal={settings.goals.water}
       />
 

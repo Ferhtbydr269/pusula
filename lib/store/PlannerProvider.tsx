@@ -118,7 +118,13 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
     return mode === "firebase" ? new FirestoreRepo(user.uid) : new LocalRepo();
   }, [user, mode]);
 
-  const [bootstrapped, setBootstrapped] = useState(false);
+  /* Hangi repo için kurulum bittiğini tutuyoruz. Bayrağı effect başında
+     sıfırlamak yerine repoyu karşılaştırmak, kullanıcı değişince eski
+     aboneliklerin bir an açık kalmasını da engelliyor. */
+  const [bootstrappedRepo, setBootstrappedRepo] = useState<PlannerRepo | null>(
+    null,
+  );
+  const bootstrapped = bootstrappedRepo !== null && bootstrappedRepo === repo;
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [settingsLoaded, setSettingsLoaded] = useState(false);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -138,7 +144,6 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!repo || !user) return;
     let alive = true;
-    setBootstrapped(false);
     repo
       .bootstrap({
         uid: user.uid,
@@ -149,7 +154,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         /* kurallar veya ağ engellerse abonelikler yine denenir */
       })
       .finally(() => {
-        if (alive) setBootstrapped(true);
+        if (alive) setBootstrappedRepo(repo);
       });
     return () => {
       alive = false;

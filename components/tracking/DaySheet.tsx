@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { motion } from "framer-motion";
 import { BookOpen, Footprints, Moon, Target } from "lucide-react";
 import type { DailyTracking, ISODate, Mood, Settings } from "@/lib/data/types";
@@ -78,56 +78,40 @@ function Metric({ icon, label, value, goal, step, format, onChange }: MetricProp
 }
 
 interface DaySheetProps {
-  date: ISODate | null;
-  tracking: DailyTracking | null;
+  /** Panel açıkken hep dolu; kapanma animasyonu bitene kadar da öyle kalır. */
+  date: ISODate;
+  tracking: DailyTracking;
+  open: boolean;
   settings: Settings;
   onClose(): void;
   onChange(date: ISODate, patch: Partial<DailyTracking>): void;
 }
 
 export function DaySheet({
-  date: dateProp,
-  tracking: trackingProp,
+  date,
+  tracking,
+  open,
   settings,
   onClose,
   onChange,
 }: DaySheetProps) {
-  const open = Boolean(dateProp && trackingProp);
-  const [note, setNote] = useState("");
-  const dateRef = useRef<ISODate | null>(null);
+  // Panel gün başına yeniden kuruluyor (bkz. Planner'daki key), bu yüzden
+  // notun ilk değerini bir kez türetmek yetiyor.
+  const [note, setNote] = useState(tracking.note);
 
-  /* Panel kapanırken içeriği bir an daha tutuyoruz, yoksa kayarak çıkma
-     animasyonu boş bir panelle oynuyor. */
-  const shown = useRef<{ date: ISODate; tracking: DailyTracking } | null>(null);
-  if (dateProp && trackingProp) {
-    shown.current = { date: dateProp, tracking: trackingProp };
-  }
-
-  // Not alanı her tuş vuruşunda yazmasın; 600 ms sonra ya da panel kapanınca kaydet.
+  /* Not her tuş vuruşunda yazılmasın: 600 ms bekle. Gün, kaydedilecek yamanın
+     içinde taşınıyor — bekleyen bir yazma hep kendi gününe gidiyor. */
   const saveNote = useMemo(
     () =>
-      debounce((value: string) => {
-        if (dateRef.current) onChange(dateRef.current, { note: value });
+      debounce((forDate: ISODate, value: string) => {
+        onChange(forDate, { note: value });
       }, 600),
     [onChange],
   );
 
-  useEffect(() => {
-    if (dateProp && dateProp !== dateRef.current) {
-      saveNote.flush();
-      dateRef.current = dateProp;
-      setNote(trackingProp?.note ?? "");
-    }
-  }, [dateProp, trackingProp?.note, saveNote]);
+  // Panel kapanırken bekleyen not kaybolmasın.
+  useEffect(() => () => saveNote.flush(), [saveNote]);
 
-  useEffect(() => {
-    if (!open) saveNote.flush();
-  }, [open, saveNote]);
-
-  const view = shown.current;
-  if (!view) return null;
-
-  const { date, tracking } = view;
   const { tracking: on, goals } = settings;
   const set = (patch: Partial<DailyTracking>) => onChange(date, patch);
 
@@ -268,7 +252,7 @@ export function DaySheet({
               value={note}
               onChange={(e) => {
                 setNote(e.target.value);
-                saveNote(e.target.value);
+                saveNote(date, e.target.value);
               }}
               onBlur={() => saveNote.flush()}
               rows={4}

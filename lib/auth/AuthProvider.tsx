@@ -7,6 +7,7 @@ import {
   useEffect,
   useMemo,
   useState,
+  useSyncExternalStore,
   type ReactNode,
 } from "react";
 import {
@@ -44,21 +45,67 @@ const AuthContext = createContext<AuthContextValue | null>(null);
 
 const LOCAL_SESSION_KEY = "hp-local-session";
 
-function readLocalSession(): AuthUser | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw = window.localStorage.getItem(LOCAL_SESSION_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as { displayName?: string };
-    return {
-      uid: "local",
-      displayName: parsed.displayName || "Sen",
-      email: "yerel@cihaz",
-    };
-  } catch {
-    return null;
+/**
+ * Yerel moddaki oturum, React'in dışında duran küçük bir depo.
+ * useSyncExternalStore ile okunuyor: sunucuda null, tarayıcıda localStorage.
+ * Böylece ne hydration uyuşmazlığı oluyor ne de effect içinde setState.
+ */
+const localSessionStore = (() => {
+  const listeners = new Set<() => void>();
+  let cache: AuthUser | null = null;
+  let cacheRaw: string | null | undefined;
+
+  function read(): AuthUser | null {
+    if (typeof window === "undefined") return null;
+    let raw: string | null = null;
+    try {
+      raw = window.localStorage.getItem(LOCAL_SESSION_KEY);
+    } catch {
+      return null;
+    }
+    // getSnapshot her renderda aynı nesneyi döndürmeli, yoksa React döngüye girer.
+    if (raw === cacheRaw) return cache;
+    cacheRaw = raw;
+    try {
+      const parsed = raw ? (JSON.parse(raw) as { displayName?: string }) : null;
+      cache = parsed
+        ? {
+            uid: "local",
+            displayName: parsed.displayName || "Sen",
+            email: "yerel@cihaz",
+          }
+        : null;
+    } catch {
+      cache = null;
+    }
+    return cache;
   }
-}
+
+  return {
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+    getSnapshot: read,
+    getServerSnapshot: () => null,
+    set(displayName: string | null) {
+      try {
+        if (displayName === null) {
+          window.localStorage.removeItem(LOCAL_SESSION_KEY);
+        } else {
+          window.localStorage.setItem(
+            LOCAL_SESSION_KEY,
+            JSON.stringify({ displayName }),
+          );
+        }
+      } catch {
+        /* gizli sekmede yazılamayabilir */
+      }
+      cacheRaw = undefined;
+      for (const l of listeners) l();
+    },
+  };
+})();
 
 /** Google'dan gelen tam adın ilk parçası selamlamada daha samimi duruyor. */
 function firstName(name: string | null | undefined, fallback = "Sen"): string {
@@ -68,31 +115,40 @@ function firstName(name: string | null | undefined, fallback = "Sen"): string {
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [status, setStatus] = useState<Status>("loading");
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [fbState, setFbState] = useState<{ status: Status; user: AuthUser | null }>(
+    { status: firebaseEnabled ? "loading" : "signedOut", user: null },
+  );
+
+  const localUser = useSyncExternalStore(
+    localSessionStore.subscribe,
+    localSessionStore.getSnapshot,
+    localSessionStore.getServerSnapshot,
+  );
 
   useEffect(() => {
-    if (!firebaseEnabled) {
-      const session = readLocalSession();
-      setUser(session);
-      setStatus(session ? "signedIn" : "signedOut");
-      return;
-    }
-
+    if (!firebaseEnabled) return;
     return onAuthStateChanged(getFirebaseAuth(), (fbUser) => {
       if (!fbUser) {
-        setUser(null);
-        setStatus("signedOut");
+        setFbState({ status: "signedOut", user: null });
         return;
       }
-      setUser({
-        uid: fbUser.uid,
-        displayName: firstName(fbUser.displayName, firstName(fbUser.email)),
-        email: fbUser.email ?? "",
+      setFbState({
+        status: "signedIn",
+        user: {
+          uid: fbUser.uid,
+          displayName: firstName(fbUser.displayName, firstName(fbUser.email)),
+          email: fbUser.email ?? "",
+        },
       });
-      setStatus("signedIn");
     });
   }, []);
+
+  const status: Status = firebaseEnabled
+    ? fbState.status
+    : localUser
+      ? "signedIn"
+      : "signedOut";
+  const user = firebaseEnabled ? fbState.user : localUser;
 
   const signUpEmail = useCallback(
     async (name: string, email: string, password: string) => {
@@ -104,10 +160,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const clean = name.trim();
       if (clean) {
         await updateProfile(cred.user, { displayName: clean });
-        setUser({
-          uid: cred.user.uid,
-          displayName: firstName(clean),
-          email: cred.user.email ?? "",
+        // updateProfile onAuthStateChanged'i tetiklemiyor; adı elle yerleştir.
+        setFbState({
+          status: "signedIn",
+          user: {
+            uid: cred.user.uid,
+            displayName: firstName(clean),
+            email: cred.user.email ?? "",
+          },
         });
       }
     },
@@ -125,13 +185,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const startLocal = useCallback(async (name: string) => {
-    const displayName = firstName(name);
-    window.localStorage.setItem(
-      LOCAL_SESSION_KEY,
-      JSON.stringify({ displayName }),
-    );
-    setUser({ uid: "local", displayName, email: "yerel@cihaz" });
-    setStatus("signedIn");
+    localSessionStore.set(firstName(name));
   }, []);
 
   const signOut = useCallback(async () => {
@@ -139,9 +193,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       await fbSignOut(getFirebaseAuth());
       return;
     }
-    window.localStorage.removeItem(LOCAL_SESSION_KEY);
-    setUser(null);
-    setStatus("signedOut");
+    localSessionStore.set(null);
   }, []);
 
   const value = useMemo<AuthContextValue>(
