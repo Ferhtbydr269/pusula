@@ -1,12 +1,12 @@
-# Haftalık Planlayıcı
+# Pusula
 
-Haftanın yedi günü tek sayfada: görevler, sınırlı erteleme hakları ve günlük
-takip. Çok kullanıcılı — herkes kendi hesabıyla girer, herkesin planı kendine
-özeldir.
+Haftanı tek sayfada tut: yedi gün, görevler, sınırlı erteleme hakları ve
+günlük takip. Çok kullanıcılı — herkes **Google hesabıyla** girer, herkesin
+planı kendine özeldir.
 
 **Yığın:** TypeScript · Next.js 16 (App Router) · Tailwind CSS v4 · Framer
-Motion · Firebase Authentication + Cloud Firestore · date-fns (`tr`, hafta
-Pazartesi başlar) · lucide-react · dnd-kit
+Motion · Firebase Authentication (yalnızca Google) + Cloud Firestore ·
+date-fns (`tr`, hafta Pazartesi başlar) · lucide-react · dnd-kit
 
 ---
 
@@ -22,7 +22,7 @@ modda** başlar: adını yazıp girersin, veri tarayıcının `localStorage`'ın
 durur. Her şey çalışır (görevler, erteleme, günlük takip, ayarlar, yedekleme)
 ama veri cihazlar arasında taşınmaz.
 
-Firebase'i bağladığında yerel mod kendiliğinden kapanır ve gerçek giriş
+Firebase'i bağladığında yerel mod kendiliğinden kapanır ve Google giriş
 ekranı gelir.
 
 ---
@@ -34,17 +34,21 @@ ekranı gelir.
 ### 2.1 Proje oluştur
 
 1. https://console.firebase.google.com adresine git, **Proje ekle**.
-2. Projeye bir ad ver (ör. `haftalik-planlayici`).
+2. Projeye bir ad ver (ör. `pusula`).
 3. Google Analytics'e gerek yok, kapatabilirsin.
 
-### 2.2 Girişi aç
+### 2.2 Google ile girişi aç
 
 1. Sol menüde **Build → Authentication → Get started**.
-2. **Sign-in method** sekmesi:
-   - **Email/Password** → aç (`Enable`) → Kaydet.
-     *Email link (passwordless) kapalı kalsın.*
-   - **Google** → aç → "Project support email" olarak kendi e-postanı seç →
-     Kaydet.
+2. **Sign-in method** sekmesi → **Google** → aç (`Enable`) → "Project support
+   email" olarak kendi e-postanı seç → Kaydet.
+
+Başka sağlayıcıya gerek yok; uygulamada e-posta/şifre formu yok. Daha önce
+**Email/Password**'ü açtıysan aynı sekmeden kapatabilirsin — uygulama onu
+kullanmıyor.
+
+Giriş yapan kullanıcının **adı ve profil fotoğrafı Google hesabından**
+alınır; ayrıca bir profil kurma adımı yoktur.
 
 ### 2.3 Firestore'u oluştur
 
@@ -66,6 +70,12 @@ verisini okuyabilir.
 Kuralın özü: `users/{uid}` ve altındaki her şeye yalnızca o `uid` ile giriş
 yapmış kullanıcı erişebilir. Başka hiçbir yol okunamaz ve yazılamaz.
 
+Tek satırın hem profil dokümanını hem alt koleksiyonları kapsamasının sebebi
+`rules_version = '2'`: bu sürümde `{document=**}` özyinelemeli jokeri **sıfır
+veya daha fazla** yol parçasıyla eşleşir. Sürüm `'1'`de bir veya daha fazla
+parça gerekirdi ve `users/{uid}` dokümanının kendisi kuralın dışında kalırdı.
+İlk satırı silme.
+
 Bileşik indekse gerek yok — nedeni
 [`firestore.indexes.json`](firestore.indexes.json) içinde yazılı.
 
@@ -80,9 +90,9 @@ Bileşik indekse gerek yok — nedeni
 ```js
 const firebaseConfig = {
   apiKey: "AIzaSy...",
-  authDomain: "haftalik-planlayici.firebaseapp.com",
-  projectId: "haftalik-planlayici",
-  storageBucket: "haftalik-planlayici.firebasestorage.app",
+  authDomain: "pusula.firebaseapp.com",
+  projectId: "pusula",
+  storageBucket: "pusula.firebasestorage.app",
   messagingSenderId: "123456789012",
   appId: "1:123456789012:web:abc123def456",
 };
@@ -106,9 +116,9 @@ yukarıdaki değerleri şu karşılıklarla doldur:
 
 ```bash
 NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSy...
-NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=haftalik-planlayici.firebaseapp.com
-NEXT_PUBLIC_FIREBASE_PROJECT_ID=haftalik-planlayici
-NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=haftalik-planlayici.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=pusula.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=pusula
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=pusula.firebasestorage.app
 NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789012
 NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:abc123def456
 ```
@@ -125,15 +135,25 @@ başlat**.
 
 ### 2.7 Çalıştığını doğrula
 
-1. Uygulamayı aç — artık e-posta/şifre ve Google butonlu giriş ekranı gelmeli.
-2. Bir hesap aç, birkaç görev ekle.
-3. Firebase konsolunda **Firestore Database → Data**: `users/{uid}/tasks`
-   altında görevlerini görmelisin.
-4. **İzolasyonu test et:** farklı bir e-postayla ikinci bir hesap aç. İkinci
-   hesapta ilk hesabın görevleri görünmemeli. Konsoldaki **Rules → Rules
-   Playground** ile de deneyebilirsin: `get` isteği,
+1. Uygulamayı aç — tek bir **Google ile devam et** butonu gelmeli.
+2. Gir. Sağ üstte Google profil fotoğrafın, menüde adın ve e-postan
+   görünmeli. **İlk girişte** altı varsayılan kategori (Ders Çalışma,
+   İngilizce, Proje/Ödev, Spor, Kişisel, Sosyal) ve varsayılan ayarlar
+   kendiliğinden oluşur.
+3. Birkaç görev ekle. Firebase konsolunda **Firestore Database → Data**:
+   `users/{uid}/tasks` altında görmelisin.
+4. **İzolasyonu test et:** başka bir Google hesabıyla gir. İkinci hesapta ilk
+   hesabın görevleri görünmemeli. Konsoldaki **Rules → Rules Playground** ile
+   de deneyebilirsin: `get` isteği,
    `/databases/(default)/documents/users/BAŞKASININ_UID/tasks/x` yolunda,
    kendi uid'inle **reddedilmeli**.
+
+Kuralların kapalı olduğunu kimlik doğrulamadan da sınayabilirsin — aşağıdaki
+istek `PERMISSION_DENIED` dönmeli, dönmüyorsa kurallar yayınlanmamıştır:
+
+```bash
+curl "https://firestore.googleapis.com/v1/projects/PROJE_ID/databases/(default)/documents/users/birisi?key=API_ANAHTARI"
+```
 
 ### (İsteğe bağlı) Yerel emülatör
 
@@ -158,7 +178,7 @@ Firestore 8080 portunda beklenir.
    işaretle.
 4. **Deploy**.
 5. **Önemli — son adım:** Vercel sana bir adres verir (ör.
-   `haftalik-planlayici.vercel.app`). Firebase konsolunda
+   `pusula.vercel.app`). Firebase konsolunda
    **Authentication → Settings → Authorized domains → Add domain** ile bu
    adresi ekle. Eklemezsen Google ile giriş `auth/unauthorized-domain`
    hatası verir.
@@ -193,6 +213,10 @@ Uygulama yedi karttan oluşan bir pano değil, **tek bir çizgili defter
 sayfası**. Yedi gün aynı sayfanın yedi sütunu; günleri ayıran şey kart kenarı
 değil saç teli kalınlığında bir çizgi. Yazılmamış kalan yer hâlâ çizgisini
 gösterir, gerçek bir defter gibi.
+
+Giriş ekranında aynı yedi günlük şerit **pusulanın kadranı** olur: altında
+ince bir altın ibre bugünü gösterir ve sayfa açılırken yerine oturur. Addan
+tek kazanılan şey bu; başka hiçbir yerde pusula benzetmesi yapılmaz.
 
 Bugünün sütunu kutulanmaz — **üzerine ışık düşer**: sayfanın üstünden geçen
 ılık, altın bir perde. Uygulamadaki tek "parlama" odur.
@@ -246,7 +270,7 @@ lib/
     local.ts          localStorage uygulaması (yerel mod)
     series.ts         tekrarlayan görevlerin üretimi
   store/              haftalık durum, erteleme kuralları, türetilmiş özetler
-  auth/               Firebase Auth veya yerel oturum
+  auth/               Google ile giriş veya yerel oturum; ad, e-posta, foto
   date.ts             tr locale, hafta hesapları, selamlama
 components/
   week/               hafta ızgarası, gün sütunu, gün seçici (mobil)
@@ -258,7 +282,7 @@ components/
 ### Firestore şeması
 
 ```
-users/{uid}                         displayName, email, createdAt
+users/{uid}                         displayName, email, photoURL, createdAt
 users/{uid}/tasks/{taskId}          title, note, categoryId, date, startTime,
                                     durationMin, priority, status,
                                     postponeCount, originalDate, seriesId,

@@ -1,57 +1,96 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion, useReducedMotion } from "framer-motion";
 import { CloudOff } from "lucide-react";
 import { useAuth } from "@/lib/auth/AuthProvider";
 import { authErrorMessage } from "@/lib/firebase/client";
-import { dayNameShort, dayOfMonth, isToday, weekDates } from "@/lib/date";
+import { dayOfMonth, isToday, weekDates } from "@/lib/date";
+import { useIsClient } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 
-type Mode = "signIn" | "signUp";
+/* Gün adları konuma bağlı, tarihe değil — sunucuda da aynı. Rakamlar ve
+   "bugün hangisi" bilgisi yalnızca tarayıcıda, useIsClient'tan sonra. */
+const DAY_NAMES = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
 
-const fieldClass =
-  "w-full rounded-md border border-rule bg-raised px-3 py-2.5 text-sm outline-none transition-colors focus:border-quince";
+/**
+ * Yedi günlük şerit, pusulanın kadranı. Üstündeki ince altın ibre bugünü
+ * gösteriyor ve açılışta yerine oturuyor — sayfadaki tek kendiliğinden
+ * hareket bu.
+ */
+function CompassDial() {
+  const isClient = useIsClient();
+  const reduce = useReducedMotion();
+  const dates = useMemo(() => (isClient ? weekDates(new Date(), 1) : null), [isClient]);
+  const todayIndex = dates?.findIndex(isToday) ?? -1;
 
-/** Sayfanın üst kenarındaki yedi gün sekmesi: içeride ne olduğunun küçük sözü. */
-function WeekTabs() {
-  const dates = useMemo(() => weekDates(new Date(), 1), []);
   return (
-    <div className="flex border-b border-rule" aria-hidden>
-      {dates.map((date) => {
-        const today = isToday(date);
-        return (
-          <div
-            key={date}
-            className={cn(
-              "flex flex-1 flex-col items-center gap-0.5 border-r border-rule py-2 last:border-r-0",
-              today && "today-light",
-            )}
+    <div className="relative">
+      {/* İbre şeridin altında duruyor: kartın overflow-hidden'ı üst kenarın
+          dışındaki her şeyi kırpıyor. Tepesi çizgiye değiyor ve o noktadan
+          dönüyor — yerine oturan bir pusula ibresi gibi. */}
+      <AnimatePresence>
+        {todayIndex >= 0 && (
+          <motion.span
+            key="needle"
+            aria-hidden
+            initial={reduce ? { opacity: 0 } : { rotate: -24, opacity: 0 }}
+            animate={reduce ? { opacity: 1 } : { rotate: 0, opacity: 1 }}
+            transition={
+              reduce
+                ? { duration: 0.2 }
+                : { type: "spring", stiffness: 150, damping: 10, delay: 0.4 }
+            }
+            style={{
+              left: `${((todayIndex + 0.5) / 7) * 100}%`,
+              transformOrigin: "50% 0%",
+            }}
+            className="absolute top-full z-10 -ml-[5px] h-[9px] w-[10px]"
           >
-            <span
-              className={cn("text-2xs", today ? "text-ink" : "text-faint")}
-            >
-              {dayNameShort(date)}
-            </span>
-            <span
+            <svg viewBox="0 0 10 9" className="size-full">
+              <path d="M5 0 L0 9 L10 9 Z" fill="var(--quince)" />
+            </svg>
+          </motion.span>
+        )}
+      </AnimatePresence>
+
+      <div className="flex border-b border-rule">
+        {DAY_NAMES.map((name, i) => {
+          const date = dates?.[i];
+          const today = i === todayIndex;
+          return (
+            <div
+              key={name}
               className={cn(
-                "numerals text-sm leading-none",
-                today ? "text-quince" : "text-muted",
+                "flex flex-1 flex-col items-center gap-0.5 border-r border-rule py-2.5 last:border-r-0",
+                today && "today-light",
               )}
             >
-              {dayOfMonth(date)}
-            </span>
-          </div>
-        );
-      })}
+              <span className={cn("text-2xs", today ? "text-ink" : "text-faint")}>
+                {name}
+              </span>
+              <span
+                className={cn(
+                  "numerals text-sm leading-none transition-opacity duration-500",
+                  today ? "text-quince" : "text-muted",
+                  date ? "opacity-100" : "opacity-0",
+                )}
+              >
+                {/* Yer tutucu: hidrasyondan önce de satır yüksekliği aynı kalsın */}
+                {date ? dayOfMonth(date) : "0"}
+              </span>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }
 
 function GoogleMark() {
   return (
-    <svg width="15" height="15" viewBox="0 0 18 18" aria-hidden>
+    <svg width="17" height="17" viewBox="0 0 18 18" aria-hidden>
       <path
         fill="#4285F4"
         d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.71-1.57 2.68-3.88 2.68-6.62Z"
@@ -73,14 +112,10 @@ function GoogleMark() {
 }
 
 export function AuthScreen() {
-  const { mode: authMode, signInEmail, signUpEmail, signInGoogle, startLocal } =
-    useAuth();
-  const local = authMode === "local";
+  const { mode, signInGoogle, startLocal } = useAuth();
+  const local = mode === "local";
 
-  const [mode, setMode] = useState<Mode>("signIn");
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -100,39 +135,25 @@ export function AuthScreen() {
     }
   };
 
-  const submit = () => {
-    if (local) {
-      void run(() => startLocal(name || "Sen"));
-      return;
-    }
-    if (mode === "signIn") {
-      void run(() => signInEmail(email, password));
-    } else {
-      void run(() => signUpEmail(name, email, password));
-    }
-  };
-
   return (
     <div className="flex min-h-full items-center justify-center overflow-y-auto px-4 py-10">
       <motion.div
-        initial={{ opacity: 0, y: 10 }}
+        initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+        transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-sm"
       >
-        <div className="px-1 text-center">
-          <h1 className="text-2xl sm:text-3xl">Haftalık Planlayıcı</h1>
-          <p className="mt-2 text-sm text-muted">
-            Haftanın yedi günü tek sayfada.
-          </p>
-        </div>
+        <div className="overflow-hidden rounded-xl border border-rule bg-surface shadow-lift">
+          <CompassDial />
 
-        <div className="mt-7 overflow-hidden rounded-xl border border-rule bg-surface shadow-lift">
-          <WeekTabs />
+          <div className="px-7 pt-10 pb-8">
+            <h1 className="text-center text-4xl leading-none">Pusula</h1>
+            <p className="mt-3.5 text-center text-sm text-muted">
+              Haftanı tek sayfada tut.
+            </p>
 
-          <div className="px-6 pt-6 pb-7">
             {local ? (
-              <div className="flex flex-col gap-4">
+              <div className="mt-7 flex flex-col gap-4">
                 <div className="flex items-start gap-2.5 rounded-md bg-quince-wash px-3 py-2.5">
                   <CloudOff
                     size={14}
@@ -140,9 +161,8 @@ export function AuthScreen() {
                     className="mt-0.5 shrink-0 text-quince"
                   />
                   <p className="text-xs leading-relaxed text-ink/80">
-                    Firebase henüz bağlı değil. Yerel modda planını hemen
-                    kurabilirsin; veri yalnızca bu tarayıcıda durur ve başka
-                    cihazlara geçmez.
+                    Firebase bağlı değil. Yerel modda hemen başlayabilirsin;
+                    veri yalnızca bu tarayıcıda durur.
                   </p>
                 </div>
 
@@ -154,96 +174,38 @@ export function AuthScreen() {
                     id="local-name"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && submit()}
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && void run(() => startLocal(name))
+                    }
                     placeholder="Ferhat"
                     autoComplete="given-name"
-                    className={cn(fieldClass, "mt-1.5")}
+                    className="mt-1.5 w-full rounded-md border border-rule bg-raised px-3 py-2.5 text-sm outline-none transition-colors focus:border-quince"
                   />
                 </div>
 
-                <Button variant="solid" disabled={busy} onClick={submit}>
+                <Button
+                  variant="solid"
+                  disabled={busy}
+                  onClick={() => void run(() => startLocal(name))}
+                >
                   Yerel modda başla
                 </Button>
               </div>
             ) : (
-              <div className="flex flex-col gap-4">
-                <AnimatePresence initial={false} mode="popLayout">
-                  {mode === "signUp" && (
-                    <motion.div
-                      key="name"
-                      initial={{ opacity: 0, height: 0 }}
-                      animate={{ opacity: 1, height: "auto" }}
-                      exit={{ opacity: 0, height: 0 }}
-                      transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
-                    >
-                      <label htmlFor="auth-name" className="text-sm text-muted">
-                        Adın
-                      </label>
-                      <input
-                        id="auth-name"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        placeholder="Ferhat"
-                        autoComplete="given-name"
-                        className={cn(fieldClass, "mt-1.5")}
-                      />
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-
-                <div>
-                  <label htmlFor="auth-email" className="text-sm text-muted">
-                    E-posta
-                  </label>
-                  <input
-                    id="auth-email"
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    autoComplete="email"
-                    className={cn(fieldClass, "mt-1.5")}
-                  />
-                </div>
-
-                <div>
-                  <label htmlFor="auth-password" className="text-sm text-muted">
-                    Şifre
-                  </label>
-                  <input
-                    id="auth-password"
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    onKeyDown={(e) => e.key === "Enter" && submit()}
-                    autoComplete={
-                      mode === "signUp" ? "new-password" : "current-password"
-                    }
-                    className={cn(fieldClass, "mt-1.5")}
-                  />
-                  {mode === "signUp" && (
-                    <p className="mt-1.5 text-xs text-faint">En az 6 karakter.</p>
-                  )}
-                </div>
-
-                <Button variant="solid" disabled={busy} onClick={submit}>
-                  {mode === "signIn" ? "Giriş yap" : "Hesap oluştur"}
-                </Button>
-
-                <div className="flex items-center gap-3">
-                  <span className="h-px flex-1 bg-rule" />
-                  <span className="text-xs text-faint">veya</span>
-                  <span className="h-px flex-1 bg-rule" />
-                </div>
-
+              <div className="mt-9">
                 <Button
                   variant="outline"
                   disabled={busy}
                   onClick={() => void run(signInGoogle)}
-                  className="bg-raised"
+                  className="w-full gap-3 bg-raised py-3 text-base hover:bg-raised"
                 >
                   <GoogleMark />
                   Google ile devam et
                 </Button>
+
+                <p className="mt-4 text-center text-xs leading-relaxed text-faint">
+                  Planın Google hesabına bağlı kalır, yalnızca sen görürsün.
+                </p>
               </div>
             )}
 
@@ -254,42 +216,13 @@ export function AuthScreen() {
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0 }}
                   role="alert"
-                  className="mt-4 rounded-md border border-brick/35 bg-brick/8 px-3 py-2 text-xs leading-relaxed text-brick"
+                  className="mt-5 rounded-md border border-brick/35 bg-brick/8 px-3 py-2 text-xs leading-relaxed text-brick"
                 >
                   {error}
                 </motion.p>
               )}
             </AnimatePresence>
           </div>
-
-          {!local && (
-            <div className="border-t border-rule px-6 py-3.5 text-center">
-              <button
-                type="button"
-                onClick={() => {
-                  setMode(mode === "signIn" ? "signUp" : "signIn");
-                  setError(null);
-                }}
-                className="text-xs text-muted transition-colors hover:text-ink"
-              >
-                {mode === "signIn" ? (
-                  <>
-                    Hesabın yok mu?{" "}
-                    <span className="text-quince underline decoration-quince/40 underline-offset-2">
-                      Kayıt ol
-                    </span>
-                  </>
-                ) : (
-                  <>
-                    Zaten hesabın var mı?{" "}
-                    <span className="text-quince underline decoration-quince/40 underline-offset-2">
-                      Giriş yap
-                    </span>
-                  </>
-                )}
-              </button>
-            </div>
-          )}
         </div>
       </motion.div>
     </div>

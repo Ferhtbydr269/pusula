@@ -76,36 +76,27 @@ export function getFirebaseDb(): Firestore {
   return dbInstance;
 }
 
-/** Giriş ekranındaki hata mesajlarını Türkçeleştirir. */
+/** Google ile girişte çıkabilecek hataları Türkçeleştirir. */
 export function authErrorMessage(code: unknown): string {
   const c = typeof code === "string" ? code : "";
   switch (c) {
-    case "auth/invalid-email":
-      return "E-posta adresi geçersiz görünüyor.";
-    case "auth/missing-password":
-      return "Şifre alanı boş.";
-    case "auth/weak-password":
-      return "Şifre en az 6 karakter olmalı.";
-    case "auth/email-already-in-use":
-      return "Bu e-posta ile bir hesap zaten var. Giriş yapmayı deneyin.";
-    case "auth/invalid-credential":
-    case "auth/wrong-password":
-    case "auth/user-not-found":
-      return "E-posta veya şifre hatalı.";
-    case "auth/too-many-requests":
-      return "Çok fazla denendi. Biraz bekleyip tekrar deneyin.";
     case "auth/popup-closed-by-user":
     case "auth/cancelled-popup-request":
-      return "Google penceresi kapandı. Tekrar deneyebilirsiniz.";
+    case "auth/user-cancelled":
+      return "Google penceresi kapandı. Hazır olduğunda tekrar dene.";
     case "auth/popup-blocked":
-      return "Tarayıcı açılır pencereyi engelledi. İzin verip tekrar deneyin.";
+      return "Tarayıcı açılır pencereyi engelledi. Bu site için izin verip tekrar dene.";
     case "auth/unauthorized-domain":
-      return "Bu adres Firebase'de yetkili değil. Authentication → Settings → Authorized domains'e ekleyin.";
+      return "Bu adres Firebase'de yetkili değil. Authentication → Settings → Authorized domains listesine ekle.";
     case "auth/operation-not-allowed":
-      return "Bu giriş yöntemi Firebase konsolunda açık değil.";
+      return "Google ile giriş Firebase konsolunda açık değil. Authentication → Sign-in method → Google'ı aç.";
+    case "auth/account-exists-with-different-credential":
+      return "Bu e-posta başka bir yöntemle kayıtlı.";
+    case "auth/too-many-requests":
+      return "Çok fazla denendi. Biraz bekleyip tekrar dene.";
     case "auth/network-request-failed":
-      return "Ağ bağlantısı kurulamadı.";
+      return "Ağ bağlantısı kurulamadı. İnternetini kontrol et.";
     default:
-      return "Giriş yapılamadı. Birazdan tekrar deneyin.";
+      return "Giriş yapılamadı. Birazdan tekrar dene.";
   }
 }

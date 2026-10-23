@@ -20,10 +20,10 @@ const hanken = Hanken_Grotesk({
 });
 
 export const metadata: Metadata = {
-  title: "Haftalık Planlayıcı",
+  title: "Pusula",
   description:
-    "Haftanın yedi günü tek sayfada: görevler, erteleme hakları ve günlük takip.",
-  applicationName: "Haftalık Planlayıcı",
+    "Haftanı tek sayfada tut: yedi gün, görevler, erteleme hakları ve günlük takip.",
+  applicationName: "Pusula",
 };
 
 export const viewport: Viewport = {

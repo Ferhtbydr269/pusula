@@ -1,22 +1,19 @@
 rules_version = '2';
 
 // Tek kural: herkes yalnızca kendi klasörüne girebilir.
-// users/{uid} ve altındaki her şey (tasks, categories, series, dailyTracking,
-// settings) sadece o uid ile giriş yapmış kullanıcıya açık. Başka hiçbir yol
-// okunamaz ve yazılamaz.
+//
+// `{document=**}` özyinelemeli joker, rules_version '2'de SIFIR veya daha fazla
+// yol parçasıyla eşleşir. Bu yüzden tek satır hem `users/{userId}` profil
+// dokümanını hem de altındaki her şeyi (tasks, categories, series,
+// dailyTracking, settings) kapsıyor. Sürüm '1'de bir veya daha fazla
+// parçayla eşleşirdi ve profil dokümanı açıkta kalırdı — bu yüzden
+// `rules_version = '2'` satırı burada şart.
+//
+// Eşleşmeyen her yol varsayılan olarak reddedilir.
 service cloud.firestore {
   match /databases/{database}/documents {
-
-    function isOwner(uid) {
-      return request.auth != null && request.auth.uid == uid;
-    }
-
-    match /users/{uid} {
-      allow read, write: if isOwner(uid);
-
-      match /{document=**} {
-        allow read, write: if isOwner(uid);
-      }
+    match /users/{userId}/{document=**} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
   }
 }

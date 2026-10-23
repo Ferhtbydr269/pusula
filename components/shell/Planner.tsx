@@ -172,7 +172,9 @@ export function Planner() {
   return (
     <div className="flex h-full flex-col px-2 pt-3 pb-2 sm:px-3 sm:pt-4 sm:pb-3">
       <Header
-        name={user.displayName}
+        name={user.firstName}
+        fullName={user.displayName}
+        photoURL={user.photoURL}
         greeting={greeting()}
         dates={dates}
         weekOffset={weekOffsetFromNow}

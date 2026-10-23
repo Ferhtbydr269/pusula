@@ -131,6 +131,8 @@ export interface Profile {
   uid: string;
   displayName: string;
   email: string;
+  /** Google hesabının profil fotoğrafı. */
+  photoURL: string | null;
   createdAt: number;
 }
 

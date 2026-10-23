@@ -19,7 +19,7 @@ import type {
   Task,
 } from "@/lib/data/types";
 import { dayNameShort, dayOfMonth, isToday } from "@/lib/date";
-import { useIsWideScreen } from "@/lib/useMediaQuery";
+import { useIsWideScreen } from "@/lib/hooks";
 import { cn } from "@/lib/utils";
 import { Ring } from "@/components/ui/Ring";
 import { DayColumn } from "./DayColumn";

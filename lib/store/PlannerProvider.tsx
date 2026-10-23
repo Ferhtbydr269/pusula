@@ -149,6 +149,7 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
         uid: user.uid,
         displayName: user.displayName,
         email: user.email,
+        photoURL: user.photoURL,
       })
       .catch(() => {
         /* kurallar veya ağ engellerse abonelikler yine denenir */

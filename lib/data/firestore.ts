@@ -88,12 +88,15 @@ export class FirestoreRepo implements PlannerRepo {
   async bootstrap(profile: Omit<Profile, "createdAt">): Promise<void> {
     const snap = await getDoc(this.userDoc());
 
+    // İlk giriş: profil, varsayılan ayarlar ve varsayılan kategoriler tek
+    // yazma turunda oluşur. Sonraki girişlerde hiçbirine dokunulmaz.
     if (!snap.exists()) {
       const batch = writeBatch(this.db);
       batch.set(this.userDoc(), {
         uid: profile.uid,
         displayName: profile.displayName,
         email: profile.email,
+        photoURL: profile.photoURL,
         createdAt: Date.now(),
       });
       batch.set(this.settingsDoc(), DEFAULT_SETTINGS);
@@ -104,15 +107,17 @@ export class FirestoreRepo implements PlannerRepo {
       return;
     }
 
-    // Google adı sonradan değişmiş olabilir; profili güncel tut.
+    // Google'daki ad veya fotoğraf sonradan değişmiş olabilir; profili güncel tut.
     const existing = snap.data() as Partial<Profile>;
     if (
       existing.displayName !== profile.displayName ||
-      existing.email !== profile.email
+      existing.email !== profile.email ||
+      existing.photoURL !== profile.photoURL
     ) {
       await updateDoc(this.userDoc(), {
         displayName: profile.displayName,
         email: profile.email,
+        photoURL: profile.photoURL,
       });
     }
   }

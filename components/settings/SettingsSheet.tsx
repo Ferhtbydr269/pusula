@@ -172,7 +172,7 @@ export function SettingsSheet({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `haftalik-planlayici-${bundle.exportedAt.slice(0, 10)}.json`;
+      a.download = `pusula-${bundle.exportedAt.slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
       onNotify("Yedek indirildi.");
@@ -188,7 +188,7 @@ export function SettingsSheet({
       const text = await file.text();
       const parsed = JSON.parse(text) as ExportBundle;
       if (!parsed || parsed.version !== 1 || !Array.isArray(parsed.tasks)) {
-        onNotify("Bu dosya bir Haftalık Planlayıcı yedeği değil.");
+        onNotify("Bu dosya bir Pusula yedeği değil.");
         return;
       }
       setPendingImport(parsed);

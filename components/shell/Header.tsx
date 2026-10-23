@@ -25,8 +25,47 @@ function GreetingIcon({ icon }: { icon: "dawn" | "day" | "dusk" | "night" }) {
   return <Sun {...common} />;
 }
 
-interface HeaderProps {
+/** Google fotoğrafı; yüklenmezse baş harfe düşer. */
+function Avatar({
+  photoURL,
+  name,
+  size,
+}: {
+  photoURL: string | null;
   name: string;
+  size: number;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  if (photoURL && !failed) {
+    return (
+      /* Google avatarını next/image üzerinden geçirmenin faydası yok: zaten
+         küçük ve boyutlandırılmış geliyor, üstelik optimizasyon katmanı hız
+         sınırına takılıp kırık resim bırakabiliyor. */
+      // eslint-disable-next-line @next/next/no-img-element
+      <img
+        src={photoURL}
+        alt=""
+        width={size}
+        height={size}
+        referrerPolicy="no-referrer"
+        onError={() => setFailed(true)}
+        className="size-full rounded-full object-cover"
+      />
+    );
+  }
+
+  return (
+    <span className="numerals text-sm">{name.slice(0, 1).toUpperCase()}</span>
+  );
+}
+
+interface HeaderProps {
+  /** Selamlamada kullanılan kısa ad. */
+  name: string;
+  /** Profil menüsünde görünen tam ad. */
+  fullName: string;
+  photoURL: string | null;
   greeting: { text: string; icon: "dawn" | "day" | "dusk" | "night" };
   dates: ISODate[];
   weekOffset: number;
@@ -45,6 +84,8 @@ interface HeaderProps {
 
 export function Header({
   name,
+  fullName,
+  photoURL,
   greeting,
   dates,
   weekOffset,
@@ -160,13 +201,13 @@ export function Header({
             aria-label="Profil menüsü"
             aria-expanded={menuOpen}
             className={cn(
-              "grid size-8 place-items-center rounded-full border text-sm transition-colors",
+              "grid size-8 place-items-center overflow-hidden rounded-full border transition-colors",
               menuOpen
                 ? "border-quince bg-quince-wash"
                 : "border-rule-strong hover:border-ink/40 hover:bg-surface",
             )}
           >
-            <span className="numerals">{name.slice(0, 1).toUpperCase()}</span>
+            <Avatar photoURL={photoURL} name={fullName} size={32} />
           </button>
 
           <AnimatePresence>
@@ -178,16 +219,21 @@ export function Header({
                 transition={{ duration: 0.16, ease: [0.22, 1, 0.36, 1] }}
                 className="absolute right-0 z-50 mt-2 w-56 origin-top-right overflow-hidden rounded-lg border border-rule bg-raised shadow-lift"
               >
-                <div className="border-b border-rule px-3.5 py-3">
-                  <p className="truncate text-sm font-medium">{name}</p>
-                  <p className="truncate text-xs text-muted">{email}</p>
-                  {localMode && (
-                    <p className="mt-1.5 flex items-center gap-1.5 text-2xs text-quince">
-                      <CloudOff size={11} strokeWidth={1.75} />
-                      Yerel mod — veri bu tarayıcıda
-                    </p>
-                  )}
+                <div className="flex items-center gap-3 border-b border-rule px-3.5 py-3">
+                  <span className="grid size-9 shrink-0 place-items-center overflow-hidden rounded-full border border-rule-strong">
+                    <Avatar photoURL={photoURL} name={fullName} size={36} />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{fullName}</p>
+                    <p className="truncate text-xs text-muted">{email}</p>
+                  </div>
                 </div>
+                {localMode && (
+                  <p className="flex items-center gap-1.5 border-b border-rule px-3.5 py-2 text-2xs text-quince">
+                    <CloudOff size={11} strokeWidth={1.75} />
+                    Yerel mod — veri bu tarayıcıda
+                  </p>
+                )}
                 <button
                   type="button"
                   onClick={() => {
