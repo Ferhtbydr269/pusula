@@ -121,13 +121,13 @@ export function AuthScreen() {
         className="w-full max-w-sm"
       >
         <div className="px-1 text-center">
-          <h1 className="text-2xl">Haftalık Planlayıcı</h1>
-          <p className="mt-1.5 text-sm text-muted">
+          <h1 className="text-2xl sm:text-3xl">Haftalık Planlayıcı</h1>
+          <p className="mt-2 text-sm text-muted">
             Haftanın yedi günü tek sayfada.
           </p>
         </div>
 
-        <div className="mt-6 overflow-hidden rounded-xl border border-rule bg-surface shadow-lift">
+        <div className="mt-7 overflow-hidden rounded-xl border border-rule bg-surface shadow-lift">
           <WeekTabs />
 
           <div className="px-6 pt-6 pb-7">

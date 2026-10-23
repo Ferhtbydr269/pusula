@@ -1,36 +1,328 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Haftalık Planlayıcı
 
-## Getting Started
+Haftanın yedi günü tek sayfada: görevler, sınırlı erteleme hakları ve günlük
+takip. Çok kullanıcılı — herkes kendi hesabıyla girer, herkesin planı kendine
+özeldir.
 
-First, run the development server:
+**Yığın:** TypeScript · Next.js 16 (App Router) · Tailwind CSS v4 · Framer
+Motion · Firebase Authentication + Cloud Firestore · date-fns (`tr`, hafta
+Pazartesi başlar) · lucide-react · dnd-kit
+
+---
+
+## 1. Hemen çalıştır (Firebase olmadan)
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+http://localhost:3000 açılır. Firebase anahtarları yoksa uygulama **yerel
+modda** başlar: adını yazıp girersin, veri tarayıcının `localStorage`'ında
+durur. Her şey çalışır (görevler, erteleme, günlük takip, ayarlar, yedekleme)
+ama veri cihazlar arasında taşınmaz.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Firebase'i bağladığında yerel mod kendiliğinden kapanır ve gerçek giriş
+ekranı gelir.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+---
 
-## Learn More
+## 2. Firebase kurulumu (adım adım)
 
-To learn more about Next.js, take a look at the following resources:
+Ücretsiz **Spark** planı bu uygulama için fazlasıyla yeter.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+### 2.1 Proje oluştur
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. https://console.firebase.google.com adresine git, **Proje ekle**.
+2. Projeye bir ad ver (ör. `haftalik-planlayici`).
+3. Google Analytics'e gerek yok, kapatabilirsin.
 
-## Deploy on Vercel
+### 2.2 Girişi aç
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+1. Sol menüde **Build → Authentication → Get started**.
+2. **Sign-in method** sekmesi:
+   - **Email/Password** → aç (`Enable`) → Kaydet.
+     *Email link (passwordless) kapalı kalsın.*
+   - **Google** → aç → "Project support email" olarak kendi e-postanı seç →
+     Kaydet.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+### 2.3 Firestore'u oluştur
+
+1. **Build → Firestore Database → Create database**.
+2. **Production mode** seç (kuralları birazdan biz yazacağız).
+3. Konum olarak sana yakın bir bölge seç — Türkiye için `eur3 (europe-west)`
+   iyi bir seçim. **Konum sonradan değiştirilemez.**
+
+### 2.4 Güvenlik kurallarını yükle
+
+Bu adım **zorunlu**. Olmadan ya kimse veri yazamaz ya da herkes herkesin
+verisini okuyabilir.
+
+1. **Firestore Database → Rules** sekmesine gel.
+2. Oradaki metni sil, bu depodaki [`firestore.rules`](firestore.rules)
+   dosyasının içeriğini yapıştır.
+3. **Publish**.
+
+Kuralın özü: `users/{uid}` ve altındaki her şeye yalnızca o `uid` ile giriş
+yapmış kullanıcı erişebilir. Başka hiçbir yol okunamaz ve yazılamaz.
+
+Bileşik indekse gerek yok — nedeni
+[`firestore.indexes.json`](firestore.indexes.json) içinde yazılı.
+
+### 2.5 Web uygulaması anahtarlarını al
+
+1. Sol üstteki ⚙ → **Proje ayarları → Genel**.
+2. Sayfanın altında **Uygulamalarınız** → web simgesi **`</>`**.
+3. Uygulamaya bir takma ad ver (ör. `web`), **Firebase Hosting'i kurma**
+   kutusunu işaretleme, **Uygulamayı kaydet**.
+4. Karşına şuna benzer bir `firebaseConfig` nesnesi çıkar:
+
+```js
+const firebaseConfig = {
+  apiKey: "AIzaSy...",
+  authDomain: "haftalik-planlayici.firebaseapp.com",
+  projectId: "haftalik-planlayici",
+  storageBucket: "haftalik-planlayici.firebasestorage.app",
+  messagingSenderId: "123456789012",
+  appId: "1:123456789012:web:abc123def456",
+};
+```
+
+### 2.6 Değerleri `.env.local`'a yaz
+
+Proje kökünde `.env.example` dosyasını `.env.local` adıyla kopyala ve
+yukarıdaki değerleri şu karşılıklarla doldur:
+
+| `firebaseConfig` alanı | `.env.local` satırı |
+|---|---|
+| `apiKey` | `NEXT_PUBLIC_FIREBASE_API_KEY=` |
+| `authDomain` | `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=` |
+| `projectId` | `NEXT_PUBLIC_FIREBASE_PROJECT_ID=` |
+| `storageBucket` | `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=` |
+| `messagingSenderId` | `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=` |
+| `appId` | `NEXT_PUBLIC_FIREBASE_APP_ID=` |
+
+Örnek:
+
+```bash
+NEXT_PUBLIC_FIREBASE_API_KEY=AIzaSy...
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=haftalik-planlayici.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=haftalik-planlayici
+NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET=haftalik-planlayici.firebasestorage.app
+NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID=123456789012
+NEXT_PUBLIC_FIREBASE_APP_ID=1:123456789012:web:abc123def456
+```
+
+Tırnak işareti koyma, satır sonlarında boşluk bırakma.
+
+> **Bu anahtarlar gizli değil.** `NEXT_PUBLIC_` ile başlayan her değer
+> tarayıcıya gönderilir; Firebase web anahtarları zaten böyle tasarlanmıştır.
+> Veriyi koruyan şey anahtarın gizliliği değil, 2.4'teki güvenlik
+> kurallarıdır. Yine de `.env.local` `.gitignore`'da, repoya girmez.
+
+Değişiklikler derleme sırasında gömüldüğü için **`npm run dev`'i yeniden
+başlat**.
+
+### 2.7 Çalıştığını doğrula
+
+1. Uygulamayı aç — artık e-posta/şifre ve Google butonlu giriş ekranı gelmeli.
+2. Bir hesap aç, birkaç görev ekle.
+3. Firebase konsolunda **Firestore Database → Data**: `users/{uid}/tasks`
+   altında görevlerini görmelisin.
+4. **İzolasyonu test et:** farklı bir e-postayla ikinci bir hesap aç. İkinci
+   hesapta ilk hesabın görevleri görünmemeli. Konsoldaki **Rules → Rules
+   Playground** ile de deneyebilirsin: `get` isteği,
+   `/databases/(default)/documents/users/BAŞKASININ_UID/tasks/x` yolunda,
+   kendi uid'inle **reddedilmeli**.
+
+### (İsteğe bağlı) Yerel emülatör
+
+`firebase-tools` kuruluysa emülatörlere bağlanabilirsin:
+
+```bash
+firebase emulators:start --only auth,firestore
+```
+
+`.env.local` içine `NEXT_PUBLIC_FIREBASE_USE_EMULATOR=1` ekle. Auth 9099,
+Firestore 8080 portunda beklenir.
+
+---
+
+## 3. Vercel'e deploy
+
+1. Projeyi bir Git deposuna gönder (GitHub/GitLab/Bitbucket).
+2. https://vercel.com → **Add New → Project** → depoyu içe aktar.
+   Framework otomatik **Next.js** olarak algılanır, ayar değiştirmene gerek yok.
+3. **Deploy'dan önce** Environment Variables bölümüne 2.6'daki **altı
+   değişkenin hepsini** ekle. Üç ortamı da (Production, Preview, Development)
+   işaretle.
+4. **Deploy**.
+5. **Önemli — son adım:** Vercel sana bir adres verir (ör.
+   `haftalik-planlayici.vercel.app`). Firebase konsolunda
+   **Authentication → Settings → Authorized domains → Add domain** ile bu
+   adresi ekle. Eklemezsen Google ile giriş `auth/unauthorized-domain`
+   hatası verir.
+   Kendi alan adını bağlarsan onu da buraya eklemeyi unutma.
+
+Ortam değişkenlerini sonradan eklersen/değiştirirsen **yeniden deploy et**;
+bu değerler derleme sırasında gömülür.
+
+Arkadaşlarına linki yollaman yeterli — herkes kendi hesabını açar, kimse
+kimsenin verisini göremez.
+
+---
+
+## 4. Veri yedekleme
+
+**Ayarlar → Yedekleme** altında:
+
+- **Dışa aktar:** bütün görevler, tekrar serileri, günlük takip verisi,
+  kategoriler ve ayarlar tek bir JSON dosyası olarak iner.
+- **İçe aktar:** bir yedeği geri yükler. Geri yükleme **mevcut veriyi siler**
+  ve yerine yedektekini koyar; uygulama bunu yapmadan önce kaç görev
+  bulduğunu söyleyip onay ister.
+
+Yerel modda veri yalnızca o tarayıcıda durduğu için ara ara yedek almak
+özellikle iyi fikir.
+
+---
+
+## 5. Tasarım konsepti — "Ayva"
+
+Uygulama yedi karttan oluşan bir pano değil, **tek bir çizgili defter
+sayfası**. Yedi gün aynı sayfanın yedi sütunu; günleri ayıran şey kart kenarı
+değil saç teli kalınlığında bir çizgi. Yazılmamış kalan yer hâlâ çizgisini
+gösterir, gerçek bir defter gibi.
+
+Bugünün sütunu kutulanmaz — **üzerine ışık düşer**: sayfanın üstünden geçen
+ılık, altın bir perde. Uygulamadaki tek "parlama" odur.
+
+| Token | Açık | Koyu |
+|---|---|---|
+| Kağıt | `#e9ece5` yeşile çalan soluk kağıt | `#171f1c` derin çam-siyahı |
+| Mürekkep | `#1c2b26` derin çam | `#e4e9df` |
+| Vurgu | `#b8821f` ayva altını | `#dcac51` |
+
+Krem + toprak rengi + yüksek kontrastlı serif üçlüsünden bilerek kaçınıldı;
+aynı sıcaklık yeşile çalan kağıt ve çam mürekkebiyle kuruldu.
+
+**Tipografi:** başlıklar ve bütün rakamlar (tarihler, sayaçlar, yüzdeler)
+**Fraunces** — yumuşak serifli, `SOFT` ve `WONK` eksenleri açık, kontrastı
+düşük tutulmuş. Gövde ve arayüz metni **Hanken Grotesk**.
+
+Hareket yalnızca bir eyleme cevap verir: check çizilir, bardak dolar, halka
+akar, biten görev güne yerleşir. `prefers-reduced-motion` destekleniyor.
+Bütün token'lar tek yerde: [`app/globals.css`](app/globals.css).
+
+---
+
+## 6. Klavye
+
+| Tuş | İş |
+|---|---|
+| `←` `→` | önceki / sonraki hafta |
+| `T` | bugüne dön |
+| `N` | bugünün sütununda hızlı ekleme |
+| `?` | hafta özeti |
+| `Esc` | açık paneli kapat |
+
+Hızlı eklemede `Enter` görevi ekler ve imleci bırakmaz; üst üste yazmaya
+devam edebilirsin. Başa saat yazarsan ayrılır: `08:30 Analiz tekrarı` →
+başlık "Analiz tekrarı", saat `08:30`.
+
+---
+
+## 7. Mimari
+
+```
+app/
+  layout.tsx          fontlar, tema önyüklemesi (ilk boyamada çakma olmasın)
+  page.tsx            oturum kapısı: giriş ekranı veya planlayıcı
+  globals.css         tasarım token'ları + çizgili sayfa, bugünün ışığı
+lib/
+  data/               veri katmanı — arayüz Firebase'i doğrudan görmez
+    types.ts          PlannerRepo arayüzü ve bütün tipler
+    firestore.ts      Firestore uygulaması
+    local.ts          localStorage uygulaması (yerel mod)
+    series.ts         tekrarlayan görevlerin üretimi
+  store/              haftalık durum, erteleme kuralları, türetilmiş özetler
+  auth/               Firebase Auth veya yerel oturum
+  date.ts             tr locale, hafta hesapları, selamlama
+components/
+  week/               hafta ızgarası, gün sütunu, gün seçici (mobil)
+  task/               görev satırı, hızlı ekleme, ayrıntılı düzenleyici
+  tracking/           günlük takip şeridi ve paneli
+  summary/ settings/ ui/ auth/ shell/
+```
+
+### Firestore şeması
+
+```
+users/{uid}                         displayName, email, createdAt
+users/{uid}/tasks/{taskId}          title, note, categoryId, date, startTime,
+                                    durationMin, priority, status,
+                                    postponeCount, originalDate, seriesId,
+                                    completedAt, createdAt, order
+users/{uid}/categories/{id}         name, color, order
+users/{uid}/series/{id}             tekrarlayan görev tanımı
+users/{uid}/dailyTracking/{YYYY-MM-DD}
+                                    waterGlasses, movementMin, sleepHours,
+                                    readingMin, focusMin, mood, note
+users/{uid}/settings/main           tema, hedefler, erteleme limiti, hafta
+                                    başlangıcı, görünen takip alanları
+```
+
+### Brief'teki şemadan sapmalar
+
+1. **`recurrenceRule` görevden çıkıp ayrı `series` koleksiyonuna taşındı.**
+   Tekrarlayan görevler ileriye doğru tek tek yazılsaydı tek bir "her gün"
+   görevi yüzlerce doküman üretirdi. Bunun yerine seri olarak saklanıyor ve
+   **yalnızca açtığın haftada** somut göreve dönüştürülüyor. Kimlik sabit:
+   `{seriesId}__{YYYY-MM-DD}`, yani aynı gün iki kez üretilemiyor. Tek bir
+   günü silersen o tarih serinin `skips` listesine girer ve bir daha
+   oluşmaz — seri bozulmaz. Geçmiş haftalar yeniden yazılmaz; o gün o görev
+   yoktu.
+
+2. **`order` alanı eklendi.** Gün içi sıralama için; saatli görevler
+   saatlerine göre, bitenler listenin altına iner.
+
+3. **Erteleme ile taşıma ayrıldı.** `postponeCount` yalnızca **Ertele
+   düğmesi** ile artar. Sürükle-bırak taşıma hak harcamaz — hak, "yarın
+   yaparım" demenin bedeli; görevi doğru güne yerleştirmenin değil. Seriden
+   gelen bir görev kendi gününden ayrılırsa (silme, taşıma, erteleme) o gün
+   `skips`'e eklenir, yoksa hafta yeniden açıldığında yerinde tekrar
+   belirirdi.
+
+### Kota
+
+Haftalık dinleyiciler yalnızca görünen 7 güne bağlanır: görevler için tek bir
+`where("date", "in", [...7 gün])` sorgusu, takip için tek bir
+`where(documentId(), "in", [...7 gün])`. Hafta değişince eski dinleyiciler
+kapanır. Ayarlar, kategoriler ve seriler oturum boyunca birer kez dinlenir.
+
+### Seri (streak) hakkında
+
+Hafta özetindeki seri, **görünen hafta içinde** bugünden geriye doğru
+görevlerinin en az %70'ini bitirdiğin gün sayısıdır. Haftalar ötesine giden
+bir seri için geçmiş günleri ayrıca okumak gerekirdi; ücretsiz kotayı boşa
+harcamamak için bu kapsamda bırakıldı. Arayüzde de böyle yazıyor.
+
+---
+
+## 8. Komutlar
+
+```bash
+npm run dev      # geliştirme sunucusu
+npm run build    # üretim derlemesi
+npm run start    # derlenmiş sürümü çalıştır
+npm run lint     # ESLint
+npx tsc --noEmit # tip kontrolü
+```
+
+---
+
+## 9. Sonraki aşamalar
+
+Mimari şunlara hazır bırakıldı: PWA (telefona yüklenebilir uygulama),
+hatırlatıcılar, aylık görünüm ve istatistik grafikleri, arkadaşlarla
+karşılıklı onaya dayalı paylaşım (ortak hedefler, birbirinin serisini görme).
