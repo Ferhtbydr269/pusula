@@ -111,8 +111,16 @@ function GoogleMark() {
   );
 }
 
+function AppleMark() {
+  return (
+    <svg width="17" height="17" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+      <path d="M17.05 20.28c-.98.95-2.05.8-3.08.35-1.09-.46-2.09-.48-3.24 0-1.44.62-2.2.44-3.06-.35C2.79 15.25 3.51 7.58 9.08 7.3c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.8-3.12 1.87-2.38 5.98.48 7.13-.57 1.5-1.31 2.99-2.57 4.1ZM12.06 7.25C11.91 5.02 13.72 3.18 15.8 3c.29 2.58-2.34 4.5-3.74 4.25Z" />
+    </svg>
+  );
+}
+
 export function AuthScreen() {
-  const { mode, signInGoogle, startLocal } = useAuth();
+  const { mode, signInGoogle, signInApple, startLocal } = useAuth();
   const local = mode === "local";
 
   const [name, setName] = useState("");
@@ -192,7 +200,7 @@ export function AuthScreen() {
                 </Button>
               </div>
             ) : (
-              <div className="mt-9">
+              <div className="mt-9 flex flex-col gap-3">
                 <Button
                   variant="outline"
                   disabled={busy}
@@ -203,8 +211,18 @@ export function AuthScreen() {
                   Google ile devam et
                 </Button>
 
-                <p className="mt-4 text-center text-xs leading-relaxed text-faint">
-                  Planın Google hesabına bağlı kalır, yalnızca sen görürsün.
+                <Button
+                  variant="solid"
+                  disabled={busy}
+                  onClick={() => void run(signInApple)}
+                  className="w-full gap-3 py-3 text-base"
+                >
+                  <AppleMark />
+                  Apple ile devam et
+                </Button>
+
+                <p className="mt-1 text-center text-xs leading-relaxed text-faint">
+                  Planın giriş yaptığın hesaba bağlı kalır, yalnızca sen görürsün.
                 </p>
               </div>
             )}

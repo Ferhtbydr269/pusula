@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { useAuth } from "@/lib/auth/AuthProvider";
+import { authErrorMessage } from "@/lib/firebase/client";
 import { usePlanner } from "@/lib/store/PlannerProvider";
 import type { ISODate, Task } from "@/lib/data/types";
 import { greeting, isToday, todayISO } from "@/lib/date";
@@ -35,7 +36,7 @@ function LoadingPage() {
 }
 
 export function Planner() {
-  const { user, signOut, mode } = useAuth();
+  const { user, signOut, linkApple, mode } = useAuth();
   const planner = usePlanner();
   const { toast } = useToast();
 
@@ -167,6 +168,19 @@ export function Planner() {
     [addTask],
   );
 
+  const handleLinkApple = useCallback(async () => {
+    try {
+      await linkApple();
+      toast("Apple hesabı bağlandı. Artık iki yöntemle de aynı plana girebilirsin.");
+    } catch (e) {
+      const code =
+        e && typeof e === "object" && "code" in e
+          ? (e as { code: unknown }).code
+          : undefined;
+      toast(authErrorMessage(code));
+    }
+  }, [linkApple, toast]);
+
   if (!ready || !user) return <LoadingPage />;
 
   return (
@@ -183,11 +197,13 @@ export function Planner() {
         total={summary.total}
         email={user.email}
         localMode={mode === "local"}
+        canLinkApple={mode === "firebase" && !user.providerIds.includes("apple.com")}
         onPrev={() => goWeek(-1)}
         onNext={() => goWeek(1)}
         onToday={goToToday}
         onOpenSummary={() => setSummaryOpen(true)}
         onOpenSettings={() => setSettingsOpen(true)}
+        onLinkApple={() => void handleLinkApple()}
         onSignOut={() => void signOut()}
       />
 

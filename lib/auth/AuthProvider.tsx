@@ -12,6 +12,8 @@ import {
 } from "react";
 import {
   GoogleAuthProvider,
+  OAuthProvider,
+  linkWithPopup,
   onAuthStateChanged,
   signInWithPopup,
   signOut as fbSignOut,
@@ -20,12 +22,13 @@ import { firebaseEnabled, getFirebaseAuth } from "@/lib/firebase/client";
 
 export interface AuthUser {
   uid: string;
-  /** Google hesabındaki tam ad — profil menüsünde görünür. */
+  /** Kimlik sağlayıcısındaki tam ad — profil menüsünde görünür. */
   displayName: string;
   /** Selamlamada tam ad fazla resmi duruyor. */
   firstName: string;
   email: string;
   photoURL: string | null;
+  providerIds: string[];
 }
 
 type Status = "loading" | "signedOut" | "signedIn";
@@ -33,9 +36,12 @@ type Status = "loading" | "signedOut" | "signedIn";
 interface AuthContextValue {
   status: Status;
   user: AuthUser | null;
-  /** "firebase" = Google hesabı, "local" = veri yalnızca bu tarayıcıda */
+  /** "firebase" = bağlı giriş sağlayıcısı, "local" = veri yalnızca bu tarayıcıda */
   mode: "firebase" | "local";
   signInGoogle(): Promise<void>;
+  signInApple(): Promise<void>;
+  /** Kullanıcı zaten giriş yaptıysa Apple hesabını açık onayla aynı UID'ye bağlar. */
+  linkApple(): Promise<void>;
   startLocal(name: string): Promise<void>;
   signOut(): Promise<void>;
 }
@@ -43,6 +49,15 @@ interface AuthContextValue {
 const AuthContext = createContext<AuthContextValue | null>(null);
 
 const LOCAL_SESSION_KEY = "hp-local-session";
+
+function appleProvider(): OAuthProvider {
+  const provider = new OAuthProvider("apple.com");
+  // Firebase'in "bir e-posta = bir hesap" modundan bağımsız, ilk Apple
+  // girişinde ad ve e-posta istemini açıkça belirtiyoruz.
+  provider.addScope("email");
+  provider.addScope("name");
+  return provider;
+}
 
 /** Tam addan ilk parça; boşsa makul bir karşılık. */
 function firstNameOf(name: string | null | undefined, fallback = "Sen"): string {
@@ -82,6 +97,7 @@ const localSessionStore = (() => {
             firstName: firstNameOf(name),
             email: "yerel@cihaz",
             photoURL: null,
+            providerIds: [],
           }
         : null;
     } catch {
@@ -143,6 +159,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           firstName: firstNameOf(name),
           email: fbUser.email ?? "",
           photoURL: fbUser.photoURL ?? null,
+          providerIds: fbUser.providerData.map((provider) => provider.providerId),
         },
       });
     });
@@ -160,6 +177,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     // Birden fazla Google hesabı olanlar hangisiyle gireceğini seçebilsin.
     provider.setCustomParameters({ prompt: "select_account" });
     await signInWithPopup(getFirebaseAuth(), provider);
+  }, []);
+
+  const signInApple = useCallback(async () => {
+    await signInWithPopup(getFirebaseAuth(), appleProvider());
+  }, []);
+
+  const linkApple = useCallback(async () => {
+    const auth = getFirebaseAuth();
+    if (!auth.currentUser) {
+      throw { code: "auth/no-current-user" };
+    }
+    // Apple, başka bir hesaba bağlama öncesinde kullanıcının açık rızasını
+    // ister. Bu işlev yalnızca profil menüsündeki bilinçli eylemden çağrılır.
+    const result = await linkWithPopup(auth.currentUser, appleProvider());
+    const name = result.user.displayName?.trim() || firstNameOf(result.user.email);
+    // Sağlayıcı listesi onAuthStateChanged'i beklemeden güncellensin; menüde
+    // bağlama eylemi anında kaybolur.
+    setFbState({
+      status: "signedIn",
+      user: {
+        uid: result.user.uid,
+        displayName: name,
+        firstName: firstNameOf(name),
+        email: result.user.email ?? "",
+        photoURL: result.user.photoURL ?? null,
+        providerIds: result.user.providerData.map((provider) => provider.providerId),
+      },
+    });
   }, []);
 
   const startLocal = useCallback(async (name: string) => {
@@ -180,10 +225,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       mode: firebaseEnabled ? "firebase" : "local",
       signInGoogle,
+      signInApple,
+      linkApple,
       startLocal,
       signOut,
     }),
-    [status, user, signInGoogle, startLocal, signOut],
+    [status, user, signInGoogle, signInApple, linkApple, startLocal, signOut],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

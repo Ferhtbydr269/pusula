@@ -76,22 +76,28 @@ export function getFirebaseDb(): Firestore {
   return dbInstance;
 }
 
-/** Google ile girişte çıkabilecek hataları Türkçeleştirir. */
+/** Kimlik doğrulama ve sağlayıcı bağlamada çıkabilecek hataları Türkçeleştirir. */
 export function authErrorMessage(code: unknown): string {
   const c = typeof code === "string" ? code : "";
   switch (c) {
     case "auth/popup-closed-by-user":
     case "auth/cancelled-popup-request":
     case "auth/user-cancelled":
-      return "Google penceresi kapandı. Hazır olduğunda tekrar dene.";
+      return "Giriş penceresi kapandı. Hazır olduğunda tekrar dene.";
     case "auth/popup-blocked":
       return "Tarayıcı açılır pencereyi engelledi. Bu site için izin verip tekrar dene.";
     case "auth/unauthorized-domain":
       return "Bu adres Firebase'de yetkili değil. Authentication → Settings → Authorized domains listesine ekle.";
     case "auth/operation-not-allowed":
-      return "Google ile giriş Firebase konsolunda açık değil. Authentication → Sign-in method → Google'ı aç.";
+      return "Bu giriş yöntemi Firebase konsolunda açık değil. Authentication → Sign-in method bölümünden etkinleştir.";
     case "auth/account-exists-with-different-credential":
-      return "Bu e-posta başka bir yöntemle kayıtlı.";
+      return "Bu e-posta başka bir giriş yöntemiyle kayıtlı. Önce mevcut hesabına giriş yap; ardından profil menüsünden Apple hesabını açık onayla bağlayabilirsin.";
+    case "auth/credential-already-in-use":
+      return "Bu Apple hesabı başka bir Pusula hesabına bağlı. Hesapları veya verileri otomatik olarak birleştirmedik.";
+    case "auth/provider-already-linked":
+      return "Bu Apple hesabı zaten mevcut Pusula hesabına bağlı.";
+    case "auth/no-current-user":
+      return "Apple hesabı bağlamak için önce mevcut hesabınla giriş yapmalısın.";
     case "auth/too-many-requests":
       return "Çok fazla denendi. Biraz bekleyip tekrar dene.";
     case "auth/network-request-failed":

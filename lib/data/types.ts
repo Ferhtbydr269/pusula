@@ -131,7 +131,7 @@ export interface Profile {
   uid: string;
   displayName: string;
   email: string;
-  /** Google hesabının profil fotoğrafı. */
+  /** Kimlik sağlayıcısının profil fotoğrafı; Apple bunu vermeyebilir. */
   photoURL: string | null;
   createdAt: number;
 }

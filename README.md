@@ -1,11 +1,11 @@
 # Pusula
 
 Haftanı tek sayfada tut: yedi gün, görevler, sınırlı erteleme hakları ve
-günlük takip. Çok kullanıcılı — herkes **Google hesabıyla** girer, herkesin
-planı kendine özeldir.
+günlük takip. Çok kullanıcılı — herkes **Google veya Apple hesabıyla** girer,
+herkesin planı kendine özeldir.
 
 **Yığın:** TypeScript · Next.js 16 (App Router) · Tailwind CSS v4 · Framer
-Motion · Firebase Authentication (yalnızca Google) + Cloud Firestore ·
+Motion · Firebase Authentication (Google + Apple) + Cloud Firestore ·
 date-fns (`tr`, hafta Pazartesi başlar) · lucide-react · dnd-kit
 
 ---
@@ -22,8 +22,8 @@ modda** başlar: adını yazıp girersin, veri tarayıcının `localStorage`'ın
 durur. Her şey çalışır (görevler, erteleme, günlük takip, ayarlar, yedekleme)
 ama veri cihazlar arasında taşınmaz.
 
-Firebase'i bağladığında yerel mod kendiliğinden kapanır ve Google giriş
-ekranı gelir.
+Firebase'i bağladığında yerel mod kendiliğinden kapanır ve Google ile Apple
+giriş ekranı gelir.
 
 ---
 
@@ -43,21 +43,40 @@ ekranı gelir.
 2. **Sign-in method** sekmesi → **Google** → aç (`Enable`) → "Project support
    email" olarak kendi e-postanı seç → Kaydet.
 
-Başka sağlayıcıya gerek yok; uygulamada e-posta/şifre formu yok. Daha önce
-**Email/Password**'ü açtıysan aynı sekmeden kapatabilirsin — uygulama onu
-kullanmıyor.
+Uygulamada e-posta/şifre formu yoktur. Daha önce **Email/Password**'ü
+açtıysan aynı sekmeden kapatabilirsin — uygulama onu kullanmıyor.
 
-Giriş yapan kullanıcının **adı ve profil fotoğrafı Google hesabından**
-alınır; ayrıca bir profil kurma adımı yoktur.
+Giriş yapan kullanıcının adı ve profil fotoğrafı (sağlayıcı veriyorsa)
+hesabından alınır; ayrıca bir profil kurma adımı yoktur.
 
-### 2.3 Firestore'u oluştur
+### 2.3 Apple ile girişi aç
+
+Apple yapılandırması Apple Developer Program üyeliği ister. Ayrıntılı ve
+güncel adımlar için Firebase'in [Apple web kimlik doğrulama rehberini](https://firebase.google.com/docs/auth/web/apple)
+izle. Özetle Apple Developer portalında bir **Services ID** oluşturup Sign in
+with Apple'ı aç, Firebase proje kimliğinle şu dönüş adresini ekle:
+
+```
+https://FIREBASE_PROJECT_ID.firebaseapp.com/__/auth/handler
+```
+
+Sonra Firebase Console → **Authentication → Sign-in method → Apple** altında
+Services ID, Apple Team ID, Key ID ve Apple özel anahtarını girip Apple
+sağlayıcısını etkinleştir. Özel anahtarı yalnızca Apple ve Firebase
+konsollarında kullan; `.env.local`, kaynak kodu veya GitHub'a koyma.
+
+Mevcut kullanıcı, profil menüsündeki **Apple hesabını bağla** eylemiyle açık
+onay vererek Apple girişini aynı hesaba ekleyebilir. Uygulama hesapları ya da
+Firestore verilerini otomatik birleştirmez.
+
+### 2.4 Firestore'u oluştur
 
 1. **Build → Firestore Database → Create database**.
 2. **Production mode** seç (kuralları birazdan biz yazacağız).
 3. Konum olarak sana yakın bir bölge seç — Türkiye için `eur3 (europe-west)`
    iyi bir seçim. **Konum sonradan değiştirilemez.**
 
-### 2.4 Güvenlik kurallarını yükle
+### 2.5 Güvenlik kurallarını yükle
 
 Bu adım **zorunlu**. Olmadan ya kimse veri yazamaz ya da herkes herkesin
 verisini okuyabilir.
@@ -79,7 +98,7 @@ parça gerekirdi ve `users/{uid}` dokümanının kendisi kuralın dışında kal
 Bileşik indekse gerek yok — nedeni
 [`firestore.indexes.json`](firestore.indexes.json) içinde yazılı.
 
-### 2.5 Web uygulaması anahtarlarını al
+### 2.6 Web uygulaması anahtarlarını al
 
 1. Sol üstteki ⚙ → **Proje ayarları → Genel**.
 2. Sayfanın altında **Uygulamalarınız** → web simgesi **`</>`**.
@@ -98,7 +117,7 @@ const firebaseConfig = {
 };
 ```
 
-### 2.6 Değerleri `.env.local`'a yaz
+### 2.7 Değerleri `.env.local`'a yaz
 
 Proje kökünde `.env.example` dosyasını `.env.local` adıyla kopyala ve
 yukarıdaki değerleri şu karşılıklarla doldur:
@@ -127,16 +146,17 @@ Tırnak işareti koyma, satır sonlarında boşluk bırakma.
 
 > **Bu anahtarlar gizli değil.** `NEXT_PUBLIC_` ile başlayan her değer
 > tarayıcıya gönderilir; Firebase web anahtarları zaten böyle tasarlanmıştır.
-> Veriyi koruyan şey anahtarın gizliliği değil, 2.4'teki güvenlik
+> Veriyi koruyan şey anahtarın gizliliği değil, 2.5'teki güvenlik
 > kurallarıdır. Yine de `.env.local` `.gitignore`'da, repoya girmez.
 
 Değişiklikler derleme sırasında gömüldüğü için **`npm run dev`'i yeniden
 başlat**.
 
-### 2.7 Çalıştığını doğrula
+### 2.8 Çalıştığını doğrula
 
-1. Uygulamayı aç — tek bir **Google ile devam et** butonu gelmeli.
-2. Gir. Sağ üstte Google profil fotoğrafın, menüde adın ve e-postan
+1. Uygulamayı aç — **Google ile devam et** ve **Apple ile devam et**
+   butonları gelmeli.
+2. Gir. Sağ üstte profil fotoğrafın (sağlayıcı veriyorsa), menüde adın ve e-postan
    görünmeli. **İlk girişte** altı varsayılan kategori (Ders Çalışma,
    İngilizce, Proje/Ödev, Spor, Kişisel, Sosyal) ve varsayılan ayarlar
    kendiliğinden oluşur.
@@ -173,7 +193,7 @@ Firestore 8080 portunda beklenir.
 1. Projeyi bir Git deposuna gönder (GitHub/GitLab/Bitbucket).
 2. https://vercel.com → **Add New → Project** → depoyu içe aktar.
    Framework otomatik **Next.js** olarak algılanır, ayar değiştirmene gerek yok.
-3. **Deploy'dan önce** Environment Variables bölümüne 2.6'daki **altı
+3. **Deploy'dan önce** Environment Variables bölümüne 2.7'deki **altı
    değişkenin hepsini** ekle. Üç ortamı da (Production, Preview, Development)
    işaretle.
 4. **Deploy**.

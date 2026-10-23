@@ -25,7 +25,7 @@ function GreetingIcon({ icon }: { icon: "dawn" | "day" | "dusk" | "night" }) {
   return <Sun {...common} />;
 }
 
-/** Google fotoğrafı; yüklenmezse baş harfe düşer. */
+/** Sağlayıcının profil fotoğrafı; yoksa baş harfe düşer. */
 function Avatar({
   photoURL,
   name,
@@ -39,7 +39,7 @@ function Avatar({
 
   if (photoURL && !failed) {
     return (
-      /* Google avatarını next/image üzerinden geçirmenin faydası yok: zaten
+      /* Sağlayıcı avatarını next/image üzerinden geçirmenin faydası yok: zaten
          küçük ve boyutlandırılmış geliyor, üstelik optimizasyon katmanı hız
          sınırına takılıp kırık resim bırakabiliyor. */
       // eslint-disable-next-line @next/next/no-img-element
@@ -74,11 +74,13 @@ interface HeaderProps {
   total: number;
   email: string;
   localMode: boolean;
+  canLinkApple: boolean;
   onPrev(): void;
   onNext(): void;
   onToday(): void;
   onOpenSummary(): void;
   onOpenSettings(): void;
+  onLinkApple(): void;
   onSignOut(): void;
 }
 
@@ -94,11 +96,13 @@ export function Header({
   total,
   email,
   localMode,
+  canLinkApple,
   onPrev,
   onNext,
   onToday,
   onOpenSummary,
   onOpenSettings,
+  onLinkApple,
   onSignOut,
 }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -245,6 +249,18 @@ export function Header({
                   <Settings size={14} strokeWidth={1.75} className="text-muted" />
                   Ayarlar
                 </button>
+                {canLinkApple && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      onLinkApple();
+                    }}
+                    className="flex w-full items-center gap-2.5 border-t border-rule px-3.5 py-2.5 text-sm transition-colors hover:bg-sunk"
+                  >
+                    Apple hesabını bağla
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => {
