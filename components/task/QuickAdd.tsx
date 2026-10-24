@@ -72,16 +72,22 @@ export function QuickAdd({
   }
 
   return (
-    <div className="rounded-md bg-raised p-2 shadow-lift">
+    /* Gerçek bir form: iOS klavyesindeki dönüş tuşu böylece "git" gibi
+       davranıp gönderiyor. Enter'ı ayrıca dinlemeye gerek kalmıyor. */
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit();
+      }}
+      className="rounded-md bg-raised p-2 shadow-lift"
+    >
       <input
         ref={inputRef}
         value={value}
         onChange={(e) => setValue(e.target.value)}
+        enterKeyHint="done"
         onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            submit();
-          } else if (e.key === "Escape") {
+          if (e.key === "Escape") {
             e.preventDefault();
             setValue("");
             setOpen(false);
@@ -91,7 +97,12 @@ export function QuickAdd({
             onLeave(e.shiftKey ? -1 : 1);
           }
         }}
-        onBlur={() => {
+        onBlur={(e) => {
+          /* Odak formun içinde bir yere gidiyorsa (kategori noktası, Ekle
+             düğmesi) panel kapanmamalı. Dokunmatikte mousedown'u engellemek
+             tek başına yetmiyordu. */
+          const next = e.relatedTarget as Node | null;
+          if (next && e.currentTarget.form?.contains(next)) return;
           if (!value.trim()) setOpen(false);
         }}
         placeholder="Ne yapılacak?"
@@ -128,19 +139,26 @@ export function QuickAdd({
           })}
         </div>
 
+        {/* Burada eskiden yalnızca "Enter" yazan bir etiket vardı. Telefonda
+            insan ona basmaya çalışıyor ve hiçbir şey olmuyordu — dokunmatikte
+            var olmayan bir şeyi vaat ediyordu. Artık gerçek bir düğme. */}
         <AnimatePresence>
           {value.trim() && (
-            <motion.span
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="numerals shrink-0 text-2xs text-faint"
+            <motion.button
+              type="submit"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={{ duration: 0.15 }}
+              // Alandan odak kaçmasın: blur önce tetiklenip paneli kapatmasın.
+              onMouseDown={(e) => e.preventDefault()}
+              className="shrink-0 rounded-md bg-ink px-3 py-1.5 text-xs font-medium text-paper transition-colors hover:bg-ink/90"
             >
-              Enter
-            </motion.span>
+              Ekle
+            </motion.button>
           )}
         </AnimatePresence>
       </div>
-    </div>
+    </form>
   );
 }
