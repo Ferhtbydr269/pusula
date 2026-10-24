@@ -210,6 +210,43 @@ bu değerler derleme sırasında gömülür.
 Arkadaşlarına linki yollaman yeterli — herkes kendi hesabını açar, kimse
 kimsenin verisini göremez.
 
+### 3.1 Girişi kendi alan adına taşı (WhatsApp'tan açanlar için)
+
+Varsayılan kurulumda giriş akışı ortada `<proje>.firebaseapp.com` adresine
+uğrar. Orası uygulamanın alan adından farklı olduğu için **iOS Safari ve
+WhatsApp, Instagram gibi uygulama içi tarayıcılar** o adresin çerezini
+"üçüncü taraf" sayıp engeller; giriş "CONTINUE TO THE APP" ekranında takılır.
+Linki sohbetten paylaşacaksan bu herkesi etkiler.
+
+Projede `/__/auth/*` yolunu kendi alan adından Firebase'e şeffafça geçiren
+bir vekil zaten tanımlı ([`next.config.ts`](next.config.ts)). Devreye almak
+için **sırayla** şunlar gerekiyor — sıralama önemli, ters yaparsan giriş
+tamamen kırılır:
+
+1. **Google.** [Google Cloud Console](https://console.cloud.google.com/apis/credentials)
+   → doğru projeyi seç → **APIs & Services → Credentials** → Firebase'in
+   oluşturduğu **Web client** → **Authorized redirect URIs** → ekle:
+   `https://<alan-adin>/__/auth/handler`
+   Eskisini (`https://<proje>.firebaseapp.com/__/auth/handler`) **silme**,
+   ikisi birlikte dursun.
+2. **Apple.** Apple Developer → **Identifiers → Services IDs** → kullandığın
+   Services ID → **Configure**:
+   - **Domains and Subdomains**'e `<alan-adin>` ekle
+   - **Return URLs**'e `https://<alan-adin>/__/auth/handler` ekle
+   Yine eskisini silme.
+3. **Vercel.** Environment Variables → `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+   değerini `<alan-adin>` yap (ör. `my-pusula.vercel.app`) ve **yeniden
+   deploy et**.
+4. `.env.local`'da bu değeri **değiştirme** — yerelde
+   `<proje>.firebaseapp.com` kalsın, yoksa `npm run dev` ile giriş yapamazsın.
+
+Doğrulama: `https://<alan-adin>/__/auth/handler` adresi tarayıcıda
+Firebase'in işleyici sayfasını vermeli (boş beyaz sayfa ya da 404 değil).
+
+Bunun Apple ile de çalıştığını Firebase belgeliyor; "Apple'da çalışmaz"
+uyarısı yardımcı kodu kendi sunucunda barındırma seçeneği için, vekil için
+değil.
+
 ---
 
 ## 4. Veri yedekleme
