@@ -2,18 +2,17 @@
 
 import { motion } from "framer-motion";
 import { Flame } from "lucide-react";
-import type { DailyTracking, ISODate, Task } from "@/lib/data/types";
+import type { DailyTracking, ISODate, Settings, Task } from "@/lib/data/types";
 import type { WeekSummary } from "@/lib/store/PlannerProvider";
 import {
   dayNameLong,
   dayNameShort,
   dayOfMonth,
-  isPastDay,
   isToday,
   todayISO,
   weekRangeLabel,
 } from "@/lib/date";
-import { formatLitres, glassesToLitres } from "@/lib/tracking";
+import { formatAverage, formatPair, weekHabits } from "@/lib/tracking";
 import { cn } from "@/lib/utils";
 import { Ring } from "@/components/ui/Ring";
 import { Sheet } from "@/components/ui/Sheet";
@@ -26,7 +25,11 @@ interface WeekSummarySheetProps {
   summary: WeekSummary;
   trackingByDate: Record<ISODate, DailyTracking>;
   tasksByDate: Record<ISODate, Task[]>;
-  waterGoal: number;
+  settings: Settings;
+}
+
+function SectionTitle({ children }: { children: string }) {
+  return <h3 className="text-base">{children}</h3>;
 }
 
 function Stat({
@@ -53,13 +56,13 @@ function Stat({
 }
 
 /** Rakamları cümleye çevir — pano değil, kısa bir değerlendirme olsun. */
-function weekSentence(
-  summary: WeekSummary,
-  dates: ISODate[],
-): string {
+function weekSentence(summary: WeekSummary, ended: boolean): string {
   if (summary.total === 0) {
-    return "Bu haftaya henüz hiçbir şey yazmadın. Boş bir sayfa da bir başlangıç.";
+    return ended
+      ? "Bu haftaya hiç görev yazmamışsın. Olur böyle haftalar."
+      : "Bu haftaya henüz hiçbir şey yazmadın. Boş bir sayfa da bir başlangıç.";
   }
+
   const parts: string[] = [];
   parts.push(`${summary.total} görevin ${summary.done} tanesini bitirdin.`);
   if (summary.bestDay && summary.done > 0) {
@@ -68,7 +71,7 @@ function weekSentence(
   if (summary.postponed > 0) {
     parts.push(`${summary.postponed} görev ertelendi.`);
   }
-  if (summary.todo > 0 && dates[6] >= todayISO()) {
+  if (!ended && summary.todo > 0) {
     parts.push(`${summary.todo} görev seni bekliyor.`);
   }
   return parts.join(" ");
@@ -81,19 +84,24 @@ export function WeekSummarySheet({
   summary,
   trackingByDate,
   tasksByDate,
-  waterGoal,
+  settings,
 }: WeekSummarySheetProps) {
+  const today = todayISO();
+  const ended = dates[6] < today;
+  const future = dates[0] > today;
+  const habits = weekHabits(dates, trackingByDate, settings, today);
+
   return (
     <Sheet
       open={open}
       onClose={onClose}
-      title="Bu hafta"
+      title={ended ? "Hafta kapandı" : future ? "Gelecek hafta" : "Bu hafta"}
       subtitle={weekRangeLabel(dates)}
     >
       <div className="flex flex-col gap-7">
         {/* ── genel ilerleme ── */}
         <div className="flex items-center gap-5">
-          <div className="relative grid place-items-center">
+          <div className="relative grid shrink-0 place-items-center">
             <Ring
               value={summary.total ? summary.done / summary.total : 0}
               empty={summary.total === 0}
@@ -105,104 +113,25 @@ export function WeekSummarySheet({
             </span>
           </div>
           <p className="text-sm leading-relaxed text-muted">
-            {weekSentence(summary, dates)}
+            {weekSentence(summary, ended)}
           </p>
         </div>
 
-        {/* ── sayılar ── */}
-        <div className="grid grid-cols-3 gap-4 border-t border-rule pt-6">
-          <Stat value={String(summary.done)} label="tamamlandı" tone="moss" />
-          <Stat value={String(summary.todo)} label="bekliyor" />
-          <Stat
-            value={String(summary.postponed)}
-            label="ertelendi"
-            tone={summary.postponed > 0 ? "quince" : "muted"}
-          />
-        </div>
+        {/* ── görevler ── */}
+        <section className="border-t border-rule pt-6">
+          <SectionTitle>Görevler</SectionTitle>
 
-        {/* ── seri ── */}
-        <div className="flex items-center gap-3 rounded-lg border border-rule bg-raised px-4 py-3">
-          <span className={summary.streak > 0 ? "text-quince" : "text-faint"}>
-            <Flame size={18} strokeWidth={1.75} />
-          </span>
-          <div>
-            <p className="text-sm">
-              {summary.streak > 0 ? (
-                <>
-                  <span className="numerals">{summary.streak}</span> gün üst üste
-                </>
-              ) : (
-                "Seri henüz başlamadı"
-              )}
-            </p>
-            <p className="mt-0.5 text-xs text-muted">
-              Görevlerinin en az %70&apos;ini bitirdiğin günler — bu hafta içinde.
-            </p>
+          <div className="mt-3 grid grid-cols-3 gap-4">
+            <Stat value={String(summary.done)} label="tamamlandı" tone="moss" />
+            <Stat value={String(summary.todo)} label="bekliyor" />
+            <Stat
+              value={String(summary.postponed)}
+              label="ertelendi"
+              tone={summary.postponed > 0 ? "quince" : "muted"}
+            />
           </div>
-        </div>
 
-        {/* ── ruh hali şeridi ── */}
-        <div className="border-t border-rule pt-6">
-          <p className="text-sm text-muted">Haftanın ruh hali</p>
-          <div className="mt-3 grid grid-cols-7 gap-1">
-            {dates.map((date) => {
-              const mood = trackingByDate[date]?.mood;
-              const emoji = MOODS.find((m) => m.value === mood)?.emoji;
-              return (
-                <div key={date} className="flex flex-col items-center gap-1">
-                  <span
-                    className={cn(
-                      "text-2xs",
-                      isToday(date) ? "text-quince" : "text-faint",
-                    )}
-                  >
-                    {dayNameShort(date)}
-                  </span>
-                  <div
-                    className={cn(
-                      "grid h-8 w-full place-items-center rounded-md border text-base",
-                      isToday(date)
-                        ? "border-quince-soft bg-quince-wash"
-                        : "border-rule bg-raised",
-                    )}
-                  >
-                    {emoji ?? (
-                      <span className="text-xs text-faint">
-                        {isPastDay(date) ? "·" : ""}
-                      </span>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* ── ortalamalar ── */}
-        <div className="grid grid-cols-2 gap-4 border-t border-rule pt-6">
-          <div>
-            <p className="numerals text-xl">
-              {formatLitres(glassesToLitres(summary.waterAvg))}
-              <span className="text-sm text-muted">
-                {" / "}
-                {formatLitres(glassesToLitres(waterGoal))}
-              </span>
-            </p>
-            <p className="mt-1 text-xs text-muted">günlük su ortalaması</p>
-          </div>
-          <div>
-            <p className="numerals text-xl">
-              {summary.movementAvg}
-              <span className="text-sm text-muted"> dk</span>
-            </p>
-            <p className="mt-1 text-xs text-muted">günlük hareket ortalaması</p>
-          </div>
-        </div>
-
-        {/* ── günlere göre tamamlanma ── */}
-        <div className="border-t border-rule pt-6">
-          <p className="text-sm text-muted">Günlere göre</p>
-          <div className="mt-3 flex flex-col gap-2">
+          <div className="mt-5 flex flex-col gap-2">
             {dates.map((date) => {
               const tasks = tasksByDate[date] ?? [];
               const done = tasks.filter((t) => t.status === "done").length;
@@ -235,7 +164,125 @@ export function WeekSummarySheet({
               );
             })}
           </div>
-        </div>
+        </section>
+
+        {/* ── alışkanlıklar: haftanın asıl verisi ── */}
+        {habits.length > 0 && (
+          <section className="border-t border-rule pt-6">
+            <SectionTitle>Alışkanlıklar</SectionTitle>
+            {/* Noktaların hangi güne denk geldiğini yazıyla söylüyoruz:
+                her satıra gün adı eklemek üç kat tekrar olurdu, ipucu
+                balonu da dokunmatikte okunmuyor. */}
+            <p className="mt-1 text-xs leading-relaxed text-muted">
+              Soldan sağa pazartesiden pazara. Hedefini tutturduğun günler
+              dolu.
+            </p>
+
+            <div className="mt-4 flex flex-col gap-4">
+              {habits.map((habit) => (
+                <div key={habit.metric.key}>
+                  <div className="flex items-baseline justify-between gap-3">
+                    <span className="text-sm">{habit.metric.label}</span>
+                    <span
+                      className={cn(
+                        "numerals text-sm",
+                        habit.hitDays === habit.elapsedDays && habit.elapsedDays > 0
+                          ? "text-moss"
+                          : "text-muted",
+                      )}
+                    >
+                      {habit.hitDays}/{habit.elapsedDays} gün
+                    </span>
+                  </div>
+
+                  <div className="mt-1.5 flex items-center justify-between gap-3">
+                    <span className="flex items-center gap-1.5">
+                      {habit.days.map((day) => (
+                        <span
+                          key={day.date}
+                          title={`${dayNameShort(day.date)} ${dayOfMonth(day.date)} — ${formatPair(habit.metric, day.value, habit.goal)}`}
+                          className={cn(
+                            "size-2.5 rounded-full",
+                            !day.elapsed
+                              ? "border border-dashed border-rule-strong"
+                              : day.reached
+                                ? "bg-moss"
+                                : "border border-rule-strong bg-transparent",
+                          )}
+                        />
+                      ))}
+                    </span>
+                    <span className="numerals shrink-0 text-2xs text-faint">
+                      ort. {formatAverage(habit)}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* ── ruh hali ── */}
+        {settings.tracking.mood && (
+          <section className="border-t border-rule pt-6">
+            <SectionTitle>Haftanın ruh hali</SectionTitle>
+            <div className="mt-3 grid grid-cols-7 gap-1">
+              {dates.map((date) => {
+                const mood = trackingByDate[date]?.mood;
+                const emoji = MOODS.find((m) => m.value === mood)?.emoji;
+                return (
+                  <div key={date} className="flex flex-col items-center gap-1">
+                    <span
+                      className={cn(
+                        "text-2xs",
+                        isToday(date) ? "text-quince" : "text-faint",
+                      )}
+                    >
+                      {dayNameShort(date)}
+                    </span>
+                    <div
+                      className={cn(
+                        "grid h-8 w-full place-items-center rounded-md border text-base",
+                        isToday(date)
+                          ? "border-quince-soft bg-quince-wash"
+                          : "border-rule bg-raised",
+                      )}
+                    >
+                      {emoji ?? (
+                        <span className="text-xs text-faint">
+                          {date <= today ? "·" : ""}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+        )}
+
+        {/* ── seri ── */}
+        <section className="border-t border-rule pt-6">
+          <div className="flex items-center gap-3 rounded-lg border border-rule bg-raised px-4 py-3">
+            <span className={summary.streak > 0 ? "text-quince" : "text-faint"}>
+              <Flame size={18} strokeWidth={1.75} />
+            </span>
+            <div>
+              <p className="text-sm">
+                {summary.streak > 0 ? (
+                  <>
+                    <span className="numerals">{summary.streak}</span> gün üst üste
+                  </>
+                ) : (
+                  "Seri henüz başlamadı"
+                )}
+              </p>
+              <p className="mt-0.5 text-xs text-muted">
+                Görevlerinin en az %70&apos;ini bitirdiğin günler — bu hafta içinde.
+              </p>
+            </div>
+          </div>
+        </section>
       </div>
     </Sheet>
   );

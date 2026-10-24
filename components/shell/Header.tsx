@@ -12,7 +12,7 @@ import {
   Sun,
   SunDim,
 } from "lucide-react";
-import { lineOfTheDay, weekRangeLabel } from "@/lib/date";
+import { isoWeekday, lineOfTheDay, todayISO, weekRangeLabel } from "@/lib/date";
 import type { ISODate } from "@/lib/data/types";
 import { cn } from "@/lib/utils";
 import { Ring } from "@/components/ui/Ring";
@@ -136,9 +136,22 @@ export function Header({
             {greeting.text} {name}
           </span>
         </h1>
-        <p className="mt-0.5 hidden truncate text-sm text-muted sm:block">
-          {lineOfTheDay()}
-        </p>
+        {/* Hafta kapanırken günün motivasyon cümlesi yerine haftaya bakmaya
+            çağırıyoruz. Rozet ya da bildirim yok; zaten okunan satırı
+            kullanmak yetiyor. */}
+        {isoWeekday(todayISO()) >= 6 ? (
+          <button
+            type="button"
+            onClick={onOpenSummary}
+            className="mt-0.5 hidden truncate text-sm text-muted underline decoration-quince/40 underline-offset-2 transition-colors hover:text-ink hover:decoration-quince sm:block"
+          >
+            Hafta biterken — bu haftaya bir bak
+          </button>
+        ) : (
+          <p className="mt-0.5 hidden truncate text-sm text-muted sm:block">
+            {lineOfTheDay()}
+          </p>
+        )}
       </div>
 
       {/* ── hafta gezinmesi ── */}

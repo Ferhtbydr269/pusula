@@ -1,4 +1,4 @@
-import type { DailyTracking, Settings } from "@/lib/data/types";
+import type { DailyTracking, ISODate, Settings } from "@/lib/data/types";
 
 /** Bir bardak su. Sayaç bardakla çalışıyor, arayüz litre konuşuyor. */
 export const GLASS_ML = 250;
@@ -135,6 +135,74 @@ export function prevValue(metric: MetricDef, current: number): number {
  */
 export function formatPair(metric: MetricDef, value: number, goal: number): string {
   return `${trNumber(metric.toNumber(value))}/${trNumber(metric.toNumber(goal))} ${metric.unit}`;
+}
+
+export interface HabitDay {
+  date: ISODate;
+  value: number;
+  reached: boolean;
+  /** Gün geldi mi — gelmemiş günler "tutturulamadı" sayılmaz. */
+  elapsed: boolean;
+}
+
+export interface HabitWeek {
+  metric: MetricDef;
+  goal: number;
+  days: HabitDay[];
+  /** Hedefi tutturduğun gün sayısı. */
+  hitDays: number;
+  /** Değerlendirmeye giren gün sayısı (geçmiş haftada 7). */
+  elapsedDays: number;
+  /** Geçen günlerin ortalaması, metriğin kendi biriminde. */
+  average: number;
+}
+
+/**
+ * Haftanın alışkanlık tablosu: her takip için gün gün tutturdun mu, kaç gün
+ * tutturdun ve ortalaman ne. Hafta özetinin asıl anlatacağı şey bu — iki
+ * ortalama sayı haftanın nasıl geçtiğini anlatmıyordu.
+ */
+export function weekHabits(
+  dates: ISODate[],
+  trackingByDate: Record<ISODate, DailyTracking>,
+  settings: Settings,
+  today: ISODate,
+): HabitWeek[] {
+  const out: HabitWeek[] = [];
+
+  for (const metric of METRICS) {
+    if (!settings.tracking[metric.key]) continue;
+    const goal = metric.goalOf(settings);
+    if (goal <= 0) continue;
+
+    const days: HabitDay[] = dates.map((date) => {
+      const value = trackingByDate[date]?.[metric.field] ?? 0;
+      return { date, value, reached: value >= goal, elapsed: date <= today };
+    });
+
+    const elapsed = days.filter((d) => d.elapsed);
+    const total = elapsed.reduce((n, d) => n + metric.toNumber(d.value), 0);
+
+    out.push({
+      metric,
+      goal,
+      days,
+      hitDays: elapsed.filter((d) => d.reached).length,
+      elapsedDays: elapsed.length,
+      average: elapsed.length ? total / elapsed.length : 0,
+    });
+  }
+
+  return out;
+}
+
+/** Ortalamayı metriğin birimiyle yazar: "1,8 L", "26 dk". */
+export function formatAverage(habit: HabitWeek): string {
+  const rounded =
+    habit.metric.unit === "dk"
+      ? Math.round(habit.average)
+      : Math.round(habit.average * 10) / 10;
+  return `${trNumber(rounded)} ${habit.metric.unit}`;
 }
 
 /** O güne eli değmiş mi: herhangi bir sayaç, ruh hali ya da not. */

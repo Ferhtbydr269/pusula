@@ -283,7 +283,7 @@ export function Planner() {
         summary={summary}
         trackingByDate={trackingByDate}
         tasksByDate={tasksByDate}
-        waterGoal={settings.goals.water}
+        settings={settings}
       />
 
       <SettingsSheet
