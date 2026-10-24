@@ -19,7 +19,6 @@ import { newId } from "@/lib/utils";
 import {
   DEFAULT_CATEGORIES,
   DEFAULT_SETTINGS,
-  emptyTracking,
   normalizeSettings,
 } from "./defaults";
 import { timeToOrder } from "./series";
@@ -211,9 +210,14 @@ export class FirestoreRepo implements PlannerRepo {
     date: ISODate,
     patch: Partial<DailyTracking>,
   ): Promise<void> {
+    /* Yalnızca değişen alanlar yazılır. Buraya emptyTracking'i yaymak
+       ölümcül: merge açık olsa bile o nesne bütün alanları sıfır değerleriyle
+       taşıdığı için her yazma diğer takipleri siliyordu (hareketi değiştir,
+       su sıfırlansın). Eksik alanların varsayılanı zaten okurken
+       uygulanıyor — bkz. PlannerProvider'daki trackingByDate. */
     await setDoc(
       doc(this.col("dailyTracking"), date),
-      { ...emptyTracking(date), ...clean(patch), date },
+      { ...clean(patch), date },
       { merge: true },
     );
   }
