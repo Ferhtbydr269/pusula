@@ -38,6 +38,15 @@ export const DEFAULT_SETTINGS: Settings = {
     mood: true,
     note: true,
   },
+  // Hepsi kapalı: hedeflerin kendiliğinden her güne düşmesi görev listesini
+  // boğuyordu. İsteyen Ayarlar'dan açar.
+  goalsInList: {
+    water: false,
+    movement: false,
+    sleep: false,
+    reading: false,
+    focus: false,
+  },
 };
 
 export function emptyTracking(date: ISODate): DailyTracking {
@@ -66,5 +75,9 @@ export function normalizeSettings(raw: unknown): Settings {
     weekStartsOn: s.weekStartsOn === 0 ? 0 : 1,
     goals: { ...DEFAULT_SETTINGS.goals, ...(s.goals ?? {}) },
     tracking: { ...DEFAULT_SETTINGS.tracking, ...(s.tracking ?? {}) },
+    goalsInList: {
+      ...DEFAULT_SETTINGS.goalsInList,
+      ...(s.goalsInList ?? {}),
+    },
   };
 }

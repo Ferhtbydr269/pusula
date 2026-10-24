@@ -37,7 +37,8 @@
   --rule-strong: #b8a07c;
   /* Sayfanın kendi çizgileri kenarlıklardan ayrı: koyu temada kenarlık kadar
      kontrast olunca ızgara gibi bağırıyorlar. */
-  --rule-faint: #d6c4a5;
+  /* Görev kartları öne çıkınca sayfanın çizgileri geri çekilebilir. */
+  --rule-faint: #ddcdb0;
 
   --quince: #a9711a;
   --quince-soft: #ddb978;

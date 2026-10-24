@@ -189,9 +189,14 @@ export function TaskRow({
       animate={{ opacity: isDragging ? 0.35 : 1, y: 0 }}
       exit={{ opacity: 0, height: 0, marginTop: 0, transition: { duration: 0.18 } }}
       transition={{ duration: 0.24, ease: [0.22, 1, 0.36, 1] }}
+      /* Görev, sayfanın üstüne konmuş bir kağıt parçası gibi durmalı.
+         Zemini sayfayla aynı olduğunda çizgilere ve hedef satırlarına
+         karışıyor, "yapılacaklar" seçilemiyordu: artık bir tık daha açık
+         zemin, saç teli kenarlık ve çok hafif bir kabarma var. */
       className={cn(
-        "group/task relative rounded-md bg-surface py-1.5 pr-1.5 pl-2.5 transition-colors duration-150",
-        "hover:bg-raised focus-within:bg-raised",
+        "group/task relative rounded-md border border-rule/70 bg-raised py-2 pr-1.5 pl-2.5 shadow-[0_1px_0_rgb(36_26_18_/_0.05)] transition-colors duration-150",
+        "hover:border-rule-strong hover:bg-raised",
+        done && "border-rule/40 bg-surface shadow-none",
         dimmed && !done && "opacity-80",
       )}
     >

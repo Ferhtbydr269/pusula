@@ -100,14 +100,15 @@ export interface DailyTracking {
   note: string;
 }
 
-export type TrackingKey =
+/** Sayıyla ölçülen, hedefi olabilen takipler. */
+export type NumericTrackingKey =
   | "water"
   | "movement"
   | "sleep"
   | "reading"
-  | "focus"
-  | "mood"
-  | "note";
+  | "focus";
+
+export type TrackingKey = NumericTrackingKey | "mood" | "note";
 
 export type ThemePreference = "light" | "dark" | "system";
 
@@ -131,6 +132,12 @@ export interface Settings {
     focus: number;
   };
   tracking: Record<TrackingKey, boolean>;
+  /**
+   * Hangi hedefler o günün görev listesinde ayrı satır olarak görünsün.
+   * Varsayılan hepsi kapalı: beş hedefin her güne otomatik düşmesi listeyi
+   * görevlerin önüne geçiriyordu. İsteyen açar.
+   */
+  goalsInList: Record<NumericTrackingKey, boolean>;
 }
 
 export interface Profile {

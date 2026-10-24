@@ -2,9 +2,14 @@
 
 import { motion, useReducedMotion } from "framer-motion";
 import { BookOpen, Check, Droplet, Footprints, Moon, Target } from "lucide-react";
-import type { DailyTracking, Settings } from "@/lib/data/types";
-import { formatPair, goalsForDay, type NumericTrackingKey } from "@/lib/tracking";
+import type {
+  DailyTracking,
+  NumericTrackingKey,
+  Settings,
+} from "@/lib/data/types";
+import { formatPair, goalsForDay } from "@/lib/tracking";
 import { cn } from "@/lib/utils";
+import { Ring } from "@/components/ui/Ring";
 
 const ICONS: Record<NumericTrackingKey, typeof Droplet> = {
   water: Droplet,
@@ -44,61 +49,47 @@ export function GoalRows({ tracking, settings, onOpen, dimmed }: GoalRowsProps) 
             title={`${metric.label}: ${metric.format(value)} / ${metric.format(goal)} — günlük takibi aç`}
             className="group/goal flex w-full items-start gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-raised"
           >
-            <span
-              className={cn(
-                "grid size-[18px] shrink-0 place-items-center rounded-full border transition-colors",
-                reached
-                  ? "border-moss bg-moss text-surface"
-                  : "border-rule-strong text-faint",
-              )}
-            >
-              {reached ? (
-                <motion.span
-                  initial={reduce ? false : { scale: 0.5, opacity: 0 }}
-                  animate={{ scale: 1, opacity: 1 }}
-                  transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
-                  className="grid place-items-center"
-                >
-                  <Check size={11} strokeWidth={3} />
-                </motion.span>
-              ) : (
-                <Icon size={10} strokeWidth={2} />
-              )}
-            </span>
+            {reached ? (
+              <motion.span
+                initial={reduce ? false : { scale: 0.5, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                className="grid size-[18px] shrink-0 place-items-center rounded-full border border-moss bg-moss text-surface"
+              >
+                <Check size={11} strokeWidth={3} />
+              </motion.span>
+            ) : (
+              <span className="relative grid size-[18px] shrink-0 place-items-center">
+                <Ring value={ratio} size={18} thickness={2} />
+                <Icon
+                  size={9}
+                  strokeWidth={2}
+                  className="absolute text-faint"
+                  aria-hidden
+                />
+              </span>
+            )}
 
-            {/* Etiket kendi satırında: değerle aynı satırda yarışınca dar
-                sütunda "Hareket" yerine "Har..." kalıyordu. */}
-            <span className="min-w-0 flex-1">
+            {/* İlerleme artık yatay çubukla değil halkayla gösteriliyor:
+                tam genişlik çubuk, sayfanın kendi çizgileriyle aynı şeye
+                benziyordu ve görevler bu çizgilerin arasında kayboluyordu. */}
+            <span className="flex min-w-0 flex-1 items-center justify-between gap-2">
               <span
                 className={cn(
-                  "block text-xs transition-colors",
+                  "truncate text-xs transition-colors",
                   reached ? "text-faint" : "text-muted",
                 )}
                 style={reached ? { textDecorationLine: "line-through" } : undefined}
               >
                 {metric.label}
               </span>
-
-              <span className="mt-1 flex items-center gap-1.5">
-                <span className="block h-[2px] flex-1 overflow-hidden rounded-full bg-sunk">
-                  <motion.span
-                    className="block h-full rounded-full"
-                    style={{ background: reached ? "var(--moss)" : "var(--quince)" }}
-                    initial={false}
-                    animate={{ width: `${ratio * 100}%` }}
-                    transition={
-                      reduce ? { duration: 0 } : { duration: 0.4, ease: [0.22, 1, 0.36, 1] }
-                    }
-                  />
-                </span>
-                <span
-                  className={cn(
-                    "numerals shrink-0 text-2xs",
-                    reached ? "text-moss" : "text-faint",
-                  )}
-                >
-                  {formatPair(metric, value, goal)}
-                </span>
+              <span
+                className={cn(
+                  "numerals shrink-0 text-2xs",
+                  reached ? "text-moss" : "text-faint",
+                )}
+              >
+                {formatPair(metric, value, goal)}
               </span>
             </span>
           </button>

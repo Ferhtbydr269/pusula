@@ -1,4 +1,9 @@
-import type { DailyTracking, ISODate, Settings } from "@/lib/data/types";
+import type {
+  DailyTracking,
+  ISODate,
+  NumericTrackingKey,
+  Settings,
+} from "@/lib/data/types";
 
 /** Bir bardak su. Sayaç bardakla çalışıyor, arayüz litre konuşuyor. */
 export const GLASS_ML = 250;
@@ -29,7 +34,8 @@ export function formatMinutesShort(min: number): string {
   return `${min} dk`;
 }
 
-export type NumericTrackingKey = "water" | "movement" | "sleep" | "reading" | "focus";
+// Tanım types.ts'te duruyor; buradan da kullanılabilsin diye yeniden veriliyor.
+export type { NumericTrackingKey };
 
 export interface MetricDef {
   key: NumericTrackingKey;
@@ -232,7 +238,10 @@ export function goalsForDay(
 ): DayGoal[] {
   const out: DayGoal[] = [];
   for (const metric of METRICS) {
+    // Listeye düşmesi için üçü birden gerekli: takip açık, hedef girilmiş ve
+    // kullanıcı o hedefi listede görmeyi seçmiş.
     if (!settings.tracking[metric.key]) continue;
+    if (!settings.goalsInList?.[metric.key]) continue;
     const goal = metric.goalOf(settings);
     if (goal <= 0) continue;
     const value = tracking[metric.field];

@@ -5,6 +5,7 @@ import { Download, Monitor, Moon, Repeat, Sun, Upload, X } from "lucide-react";
 import type {
   Category,
   ExportBundle,
+  NumericTrackingKey,
   Series,
   Settings,
   ThemePreference,
@@ -368,6 +369,34 @@ export function SettingsSheet({
                 </div>
               ),
             )}
+          </div>
+        </section>
+
+        {/* ── hedefler günün listesinde ── */}
+        <section className="border-t border-rule pt-6">
+          <SectionTitle>Günün listesinde göster</SectionTitle>
+          <p className="mt-1 mb-2 text-xs leading-relaxed text-muted">
+            Açtığın hedefler o günün görev listesinde ayrı bir satır olarak
+            görünür ve sayaç hedefi geçince kendiliğinden tamamlanır. Hepsi
+            kapalıyken liste yalnızca görevlerinden oluşur.
+          </p>
+          <div className="mt-2">
+            {GOAL_FIELDS.map(({ key, label }) => (
+              <Row key={key} label={label}>
+                <Toggle
+                  label={`${label} hedefi günün listesinde`}
+                  checked={settings.goalsInList[key as NumericTrackingKey]}
+                  onChange={(next) =>
+                    onSave({
+                      goalsInList: {
+                        ...settings.goalsInList,
+                        [key]: next,
+                      },
+                    })
+                  }
+                />
+              </Row>
+            ))}
           </div>
         </section>
 
