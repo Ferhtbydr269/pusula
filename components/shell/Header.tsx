@@ -185,16 +185,19 @@ export function Header({
 
       {/* ── haftalık ilerleme + profil ── */}
       <div className="order-2 flex shrink-0 items-center gap-1 sm:order-3">
+        {/* Halka tek başına "bana bas" demiyordu; adını yanına yazdık. */}
         <button
           type="button"
           onClick={onOpenSummary}
-          title="Hafta özeti"
-          aria-label={`Hafta özeti — ${done} / ${total} görev tamam`}
-          className="flex items-center gap-2 rounded-md px-2 py-1.5 transition-colors hover:bg-surface"
+          aria-label={`Bu hafta — ${done} / ${total} görev tamam, özeti aç`}
+          className="flex items-center gap-2 rounded-md border border-transparent px-2 py-1.5 transition-colors hover:border-rule hover:bg-surface"
         >
           <Ring value={total ? done / total : 0} empty={total === 0} size={24} />
-          <span className="numerals hidden text-sm text-muted sm:block">
-            {total ? `%${percent}` : "—"}
+          <span className="hidden items-baseline gap-1.5 sm:flex">
+            <span className="text-sm text-muted">Bu hafta</span>
+            <span className="numerals text-sm text-ink">
+              {total ? `%${percent}` : "—"}
+            </span>
           </span>
         </button>
 

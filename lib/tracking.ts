@@ -44,8 +44,12 @@ export interface MetricDef {
    * beş dakika yürümüyor; sayacı sıfırdan tek tek tırmandırmak eziyet.
    */
   startAt: number;
-  /** Panelde ve hedef satırında görünen biçim. */
+  /** Panelde görünen uzun biçim: "20 dk", "1,5 sa", "0,75 L". */
   format(value: number): string;
+  /** Birim kısaltması — dar hedef satırında tek kez yazılır. */
+  unit: string;
+  /** Sayaç değerini gösterilecek sayıya çevirir (su: bardak → litre). */
+  toNumber(value: number): number;
   /** Hedef sıfırsa "kendin belirle" demek. */
   goalOf(settings: Settings): number;
 }
@@ -59,6 +63,8 @@ export const METRICS: MetricDef[] = [
     step: 1,
     startAt: 1,
     format: (glasses) => formatLitres(glassesToLitres(glasses)),
+    unit: "L",
+    toNumber: glassesToLitres,
     goalOf: (s) => s.goals.water,
   },
   {
@@ -69,6 +75,8 @@ export const METRICS: MetricDef[] = [
     step: 5,
     startAt: 10,
     format: formatMinutesShort,
+    unit: "dk",
+    toNumber: (v) => v,
     goalOf: (s) => s.goals.movement,
   },
   {
@@ -79,6 +87,8 @@ export const METRICS: MetricDef[] = [
     step: 0.5,
     startAt: 6,
     format: (h) => `${trNumber(h)} sa`,
+    unit: "sa",
+    toNumber: (v) => v,
     goalOf: (s) => s.goals.sleep,
   },
   {
@@ -89,6 +99,8 @@ export const METRICS: MetricDef[] = [
     step: 5,
     startAt: 10,
     format: formatMinutesShort,
+    unit: "dk",
+    toNumber: (v) => v,
     goalOf: (s) => s.goals.reading,
   },
   {
@@ -99,6 +111,8 @@ export const METRICS: MetricDef[] = [
     step: 15,
     startAt: 25,
     format: formatMinutesShort,
+    unit: "dk",
+    toNumber: (v) => v,
     goalOf: (s) => s.goals.focus,
   },
 ];
@@ -112,6 +126,15 @@ export function nextValue(metric: MetricDef, current: number): number {
 export function prevValue(metric: MetricDef, current: number): number {
   if (current <= metric.startAt) return 0;
   return Math.max(0, current - metric.step);
+}
+
+/**
+ * Dar gün sütunu için sıkışık biçim: "20/30 dk", "0,75/2 L".
+ * Uzun biçimde ("20 dk / 30 dk") etiket kırpılıyordu ve "Hareket" yerine
+ * "H..." kalıyordu — etiketlemenin bütün amacı kaçıyordu.
+ */
+export function formatPair(metric: MetricDef, value: number, goal: number): string {
+  return `${trNumber(metric.toNumber(value))}/${trNumber(metric.toNumber(goal))} ${metric.unit}`;
 }
 
 /** O güne eli değmiş mi: herhangi bir sayaç, ruh hali ya da not. */

@@ -211,9 +211,15 @@ export function TaskRow({
             {...listeners}
             // dnd-kit buraya role="button" koyuyor; adını kendimiz veriyoruz
             // ki ekran okuyucuda adsız bir düğme olarak durmasın.
-            aria-label={`${task.title} — sürükleyerek başka güne taşı`}
+            aria-label={`${task.title} — düzenlemek için dokun, sürükleyerek başka güne taşı`}
+            /* Satıra dokunmak düzenleyiciyi açıyor. Erteleme, düzenleme ve
+               silme yalnızca fare üstüne gelince beliriyordu; dokunmatikte ve
+               ilk kullanımda bu eylemlerin varlığı hiç anlaşılmıyordu.
+               Sürükleme eşiği 6 piksel olduğu için tıklama ile sürükleme
+               birbirine karışmıyor. */
+            onClick={onEdit}
             // Sürüklemek için başlığa basılı tutmak yeterli; ayrı tutamaç yok.
-            className="cursor-grab touch-none active:cursor-grabbing"
+            className="cursor-pointer touch-none"
           >
             <p
               className={cn(

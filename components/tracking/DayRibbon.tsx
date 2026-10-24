@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { Droplet, Footprints, SlidersHorizontal, StickyNote } from "lucide-react";
+import { ChevronUp, Droplet, Footprints, Smile, StickyNote } from "lucide-react";
 import type { DailyTracking, ISODate, Mood, Settings } from "@/lib/data/types";
 import { clamp, cn } from "@/lib/utils";
 import { WaterGlasses } from "./WaterGlasses";
@@ -93,14 +93,19 @@ function MoodButton({
       <button
         type="button"
         onClick={() => setOpen((o) => !o)}
+        title={current ? `Ruh hali: ${current.label}` : "Bugün nasılsın?"}
         aria-label={current ? `Ruh hali: ${current.label}` : "Ruh hali seç"}
         aria-expanded={open}
         className={cn(
-          "grid size-5 place-items-center rounded-full text-[13px] leading-none transition-colors",
-          current ? "hover:bg-sunk" : "border border-dashed border-rule-strong hover:border-ink/40",
+          "grid size-5 place-items-center rounded-full leading-none transition-colors",
+          current
+            ? "text-[13px] hover:bg-sunk"
+            : "text-faint hover:bg-sunk hover:text-ink",
         )}
       >
-        {current?.emoji ?? ""}
+        {/* Boşken kesik çizgili bir daire duruyordu; ne olduğu anlaşılmıyordu.
+            Solgun bir yüz, en azından neyin sorulduğunu söylüyor. */}
+        {current ? current.emoji : <Smile size={14} strokeWidth={1.75} />}
       </button>
 
       <AnimatePresence>
@@ -167,12 +172,37 @@ export function DayRibbon({
   return (
     <div
       className={cn(
-        "shrink-0 border-t px-2.5 pt-2 pb-2.5",
+        "shrink-0 border-t px-2.5 pt-1.5 pb-2.5",
         today ? "border-today-edge" : "border-rule",
       )}
     >
+      {/* Şeridin adı yazılı olmazsa kimse buranın günlük takip olduğunu
+          anlamıyor: etiketsiz noktalar ve küçük bir ikon kalıyordu ortada. */}
+      <button
+        type="button"
+        onClick={onOpen}
+        aria-label="Günlük takibi aç"
+        className="group/band mb-1 flex w-full items-center justify-between gap-1 rounded px-1 py-0.5 text-2xs text-faint transition-colors hover:bg-sunk hover:text-ink"
+      >
+        <span>Günlük takip</span>
+        <ChevronUp
+          size={11}
+          strokeWidth={2}
+          className="shrink-0 transition-transform group-hover/band:-translate-y-px"
+        />
+      </button>
+
       {on.water && (
         <div className="flex min-h-[15px] items-center gap-1.5">
+          <Droplet
+            size={11}
+            strokeWidth={1.75}
+            aria-hidden
+            className={cn(
+              "shrink-0",
+              waterReached ? "text-[var(--cat-petrol)]" : "text-faint",
+            )}
+          />
           {compactWater ? (
             <button
               type="button"
@@ -180,11 +210,6 @@ export function DayRibbon({
               className="flex items-center gap-1 rounded px-1 py-0.5 text-2xs text-muted transition-colors hover:bg-sunk hover:text-ink"
               aria-label={`Su: ${tracking.waterGlasses} / ${goals.water} bardak, bir bardak ekle`}
             >
-              <Droplet
-                size={11}
-                strokeWidth={1.75}
-                className={waterReached ? "text-[var(--cat-petrol)]" : ""}
-              />
               <span className="numerals">
                 {tracking.waterGlasses}/{goals.water}
               </span>
@@ -240,16 +265,6 @@ export function DayRibbon({
             <StickyNote size={11} strokeWidth={1.75} />
           </span>
         )}
-
-        <button
-          type="button"
-          onClick={onOpen}
-          aria-label="Günlük takibi aç"
-          title="Günlük takip"
-          className="ml-auto rounded p-1 text-faint transition-colors hover:bg-sunk hover:text-ink"
-        >
-          <SlidersHorizontal size={12} strokeWidth={1.75} />
-        </button>
       </div>
     </div>
   );

@@ -39,9 +39,14 @@ interface DayColumnProps {
  */
 function EmptyToday() {
   return (
-    <p className="mt-1 px-2 text-xs leading-relaxed text-faint">
-      Bugüne ilk satırı yaz.
-    </p>
+    <div className="mt-1 px-2 text-xs leading-relaxed text-faint">
+      <p>Bugüne ilk satırı yaz.</p>
+      {/* İlk kullanımda takip bölümünün varlığı hiç anlaşılmıyordu. */}
+      <p className="mt-1.5">
+        Su, uyku ve hareket aşağıdaki{" "}
+        <span className="text-muted">Günlük takip</span> bölümünde.
+      </p>
+    </div>
   );
 }
 

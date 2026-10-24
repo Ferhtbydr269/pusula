@@ -3,7 +3,7 @@
 import { motion, useReducedMotion } from "framer-motion";
 import { BookOpen, Check, Droplet, Footprints, Moon, Target } from "lucide-react";
 import type { DailyTracking, Settings } from "@/lib/data/types";
-import { goalsForDay, type NumericTrackingKey } from "@/lib/tracking";
+import { formatPair, goalsForDay, type NumericTrackingKey } from "@/lib/tracking";
 import { cn } from "@/lib/utils";
 
 const ICONS: Record<NumericTrackingKey, typeof Droplet> = {
@@ -42,7 +42,7 @@ export function GoalRows({ tracking, settings, onOpen, dimmed }: GoalRowsProps) 
             type="button"
             onClick={onOpen}
             title={`${metric.label}: ${metric.format(value)} / ${metric.format(goal)} — günlük takibi aç`}
-            className="group/goal flex w-full items-center gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-raised"
+            className="group/goal flex w-full items-start gap-2 rounded-md px-1.5 py-1 text-left transition-colors hover:bg-raised"
           >
             <span
               className={cn(
@@ -66,16 +66,30 @@ export function GoalRows({ tracking, settings, onOpen, dimmed }: GoalRowsProps) 
               )}
             </span>
 
+            {/* Etiket kendi satırında: değerle aynı satırda yarışınca dar
+                sütunda "Hareket" yerine "Har..." kalıyordu. */}
             <span className="min-w-0 flex-1">
-              <span className="flex items-baseline justify-between gap-2">
-                <span
-                  className={cn(
-                    "truncate text-xs transition-colors",
-                    reached ? "text-faint" : "text-muted",
-                  )}
-                  style={reached ? { textDecorationLine: "line-through" } : undefined}
-                >
-                  {metric.label}
+              <span
+                className={cn(
+                  "block text-xs transition-colors",
+                  reached ? "text-faint" : "text-muted",
+                )}
+                style={reached ? { textDecorationLine: "line-through" } : undefined}
+              >
+                {metric.label}
+              </span>
+
+              <span className="mt-1 flex items-center gap-1.5">
+                <span className="block h-[2px] flex-1 overflow-hidden rounded-full bg-sunk">
+                  <motion.span
+                    className="block h-full rounded-full"
+                    style={{ background: reached ? "var(--moss)" : "var(--quince)" }}
+                    initial={false}
+                    animate={{ width: `${ratio * 100}%` }}
+                    transition={
+                      reduce ? { duration: 0 } : { duration: 0.4, ease: [0.22, 1, 0.36, 1] }
+                    }
+                  />
                 </span>
                 <span
                   className={cn(
@@ -83,21 +97,8 @@ export function GoalRows({ tracking, settings, onOpen, dimmed }: GoalRowsProps) 
                     reached ? "text-moss" : "text-faint",
                   )}
                 >
-                  {metric.format(value)}
-                  <span className="text-faint"> / {metric.format(goal)}</span>
+                  {formatPair(metric, value, goal)}
                 </span>
-              </span>
-
-              <span className="mt-1 block h-[2px] overflow-hidden rounded-full bg-sunk">
-                <motion.span
-                  className="block h-full rounded-full"
-                  style={{ background: reached ? "var(--moss)" : "var(--quince)" }}
-                  initial={false}
-                  animate={{ width: `${ratio * 100}%` }}
-                  transition={
-                    reduce ? { duration: 0 } : { duration: 0.4, ease: [0.22, 1, 0.36, 1] }
-                  }
-                />
               </span>
             </span>
           </button>
