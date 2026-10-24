@@ -11,6 +11,7 @@ import type {
   TrackingKey,
 } from "@/lib/data/types";
 import { recurrenceLabel } from "@/lib/data/series";
+import { glassesToLitres, litresToGlasses } from "@/lib/tracking";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/Button";
 import { Sheet } from "@/components/ui/Sheet";
@@ -38,12 +39,39 @@ const GOAL_FIELDS: Array<{
   unit: string;
   step: number;
   max: number;
+  /** Su içeride bardakla saklanıyor, burada litre olarak düzenleniyor. */
+  toDisplay?(stored: number): number;
+  fromDisplay?(shown: number): number;
+  hint?: string;
 }> = [
-  { key: "water", label: "Su", unit: "bardak", step: 1, max: 20 },
+  {
+    key: "water",
+    label: "Su",
+    unit: "litre",
+    step: 0.25,
+    max: 5,
+    toDisplay: glassesToLitres,
+    fromDisplay: litresToGlasses,
+    hint: "Bir bardak 250 ml sayılır.",
+  },
   { key: "movement", label: "Hareket", unit: "dk", step: 5, max: 300 },
   { key: "sleep", label: "Uyku", unit: "saat", step: 1, max: 14 },
-  { key: "reading", label: "Okuma", unit: "dk", step: 5, max: 300 },
-  { key: "focus", label: "Odak", unit: "dk", step: 15, max: 720 },
+  {
+    key: "reading",
+    label: "Okuma",
+    unit: "dk",
+    step: 5,
+    max: 300,
+    hint: "0 bırakırsan hedef konmaz ve günün listesine düşmez.",
+  },
+  {
+    key: "focus",
+    label: "Odak",
+    unit: "dk",
+    step: 15,
+    max: 720,
+    hint: "0 bırakırsan hedef konmaz ve günün listesine düşmez.",
+  },
 ];
 
 function SectionTitle({ children }: { children: string }) {
@@ -283,20 +311,34 @@ export function SettingsSheet({
         <section className="border-t border-rule pt-6">
           <SectionTitle>Günlük hedefler</SectionTitle>
           <div className="mt-2">
-            {GOAL_FIELDS.map(({ key, label, unit, step, max }) => (
-              <Row key={key} label={label}>
-                <NumberField
-                  label={`${label} hedefi`}
-                  value={settings.goals[key]}
-                  onChange={(next) =>
-                    onSave({ goals: { ...settings.goals, [key]: next } })
-                  }
-                  step={step}
-                  max={max}
-                  unit={unit}
-                />
-              </Row>
-            ))}
+            {GOAL_FIELDS.map(
+              ({ key, label, unit, step, max, toDisplay, fromDisplay, hint }) => (
+                <div key={key}>
+                  <Row label={label}>
+                    <NumberField
+                      label={`${label} hedefi`}
+                      value={
+                        toDisplay ? toDisplay(settings.goals[key]) : settings.goals[key]
+                      }
+                      onChange={(shown) =>
+                        onSave({
+                          goals: {
+                            ...settings.goals,
+                            [key]: fromDisplay ? fromDisplay(shown) : shown,
+                          },
+                        })
+                      }
+                      step={step}
+                      max={max}
+                      unit={unit}
+                    />
+                  </Row>
+                  {hint && (
+                    <p className="-mt-0.5 mb-2 text-2xs text-faint">{hint}</p>
+                  )}
+                </div>
+              ),
+            )}
           </div>
         </section>
 

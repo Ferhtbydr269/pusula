@@ -10,27 +10,30 @@
    Vurgu: ayva altını — sadece işaretlerde, ilerlemede, bugünün ışığında.
    ─────────────────────────────────────────────────────────────── */
 :root {
-  --paper: #e9ece5;
-  --surface: #f6f8f3;
-  --surface-raised: #fdfdfb;
-  --surface-sunk: #e1e6d9;
+  /* Eski mektup kağıdı: ılık, hafif okra dönmüş bir ekru. Mürekkep yine derin
+     çam yeşili — kağıt ısınırken her şey sepyaya düşmesin, sayfada bir renk
+     kalsın. */
+  --paper: #e9e1d0;
+  --surface: #f4eee2;
+  --surface-raised: #fbf6ec;
+  --surface-sunk: #ded4c0;
 
-  --ink: #1c2b26;
-  --ink-muted: #5c6d64;
-  --ink-faint: #8b9a90;
+  --ink: #222b24;
+  --ink-muted: #5e6356;
+  --ink-faint: #8e8b79;
 
-  --rule: #d3dacd;
-  --rule-strong: #bcc6b6;
+  --rule: #d6cab2;
+  --rule-strong: #c0b296;
   /* Sayfanın kendi çizgileri kenarlıklardan ayrı: koyu temada kenarlık kadar
      kontrast olunca ızgara gibi bağırıyorlar. */
-  --rule-faint: #d3dacd;
+  --rule-faint: #d9cdb6;
 
-  --quince: #b8821f;
-  --quince-soft: #e3cd98;
-  --quince-wash: #f8f0d8;
+  --quince: #a9761c;
+  --quince-soft: #e0c88f;
+  --quince-wash: #f7ecd2;
 
-  --moss: #5b7a45;
-  --brick: #a8564a;
+  --moss: #566e3f;
+  --brick: #9e5140;
 
   /* Kategori ailesi: hepsi orta ton, benzer açıklıkta — kimse bağırmıyor. */
   --cat-petrol: #2d6a68;
@@ -41,11 +44,11 @@
   --cat-slate: #4a648a;
 
   /* Bugünün üzerine düşen ışık */
-  --today-light: #fbf4e2;
-  --today-edge: #e8d7a8;
+  --today-light: #fdf4da;
+  --today-edge: #e4cf9f;
 
-  --lift: 0 1px 2px rgb(28 43 38 / 0.05), 0 8px 24px -12px rgb(28 43 38 / 0.18);
-  --lift-strong: 0 2px 4px rgb(28 43 38 / 0.06), 0 18px 48px -16px rgb(28 43 38 / 0.26);
+  --lift: 0 1px 2px rgb(60 48 28 / 0.06), 0 8px 24px -12px rgb(60 48 28 / 0.2);
+  --lift-strong: 0 2px 4px rgb(60 48 28 / 0.07), 0 18px 48px -16px rgb(60 48 28 / 0.28);
 
   /* Çizgili sayfanın satır aralığı */
   --rule-step: 2.125rem;

@@ -4,11 +4,13 @@ import { AnimatePresence, motion } from "framer-motion";
 import { useDroppable } from "@dnd-kit/core";
 import type { Category, DailyTracking, ISODate, Settings, Task } from "@/lib/data/types";
 import { dayNameShort, dayOfMonth, isPastDay, isToday } from "@/lib/date";
+import { hasAnyTracking } from "@/lib/tracking";
 import { cn } from "@/lib/utils";
 import { Ring } from "@/components/ui/Ring";
 import { QuickAdd } from "@/components/task/QuickAdd";
 import { TaskRow } from "@/components/task/TaskRow";
 import { DayRibbon } from "@/components/tracking/DayRibbon";
+import { GoalRows } from "@/components/tracking/GoalRows";
 
 interface DayColumnProps {
   date: ISODate;
@@ -155,7 +157,20 @@ export function DayColumn({
           </AnimatePresence>
         </div>
 
-        <motion.div layout="position" className={total ? "mt-1" : ""}>
+        {/* Günün hedefleri görevlerin hemen altında: aynı listede duruyorlar
+            ama kendi bölmelerinde, çünkü elle işaretlenmiyorlar.
+            Yalnızca bugünde ve eli değmiş günlerde görünürler — yedi günün
+            hepsine aynı üç satırı yazmak sayfayı forma çeviriyordu. */}
+        {(today || hasAnyTracking(tracking)) && (
+          <GoalRows
+            tracking={tracking}
+            settings={settings}
+            onOpen={() => onOpenDay(date)}
+            dimmed={past}
+          />
+        )}
+
+        <motion.div layout="position" className="mt-1.5">
           <QuickAdd
             date={date}
             categories={categories}

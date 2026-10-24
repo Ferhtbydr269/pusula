@@ -13,6 +13,7 @@ import {
   todayISO,
   weekRangeLabel,
 } from "@/lib/date";
+import { formatLitres, glassesToLitres } from "@/lib/tracking";
 import { cn } from "@/lib/utils";
 import { Ring } from "@/components/ui/Ring";
 import { Sheet } from "@/components/ui/Sheet";
@@ -181,8 +182,11 @@ export function WeekSummarySheet({
         <div className="grid grid-cols-2 gap-4 border-t border-rule pt-6">
           <div>
             <p className="numerals text-xl">
-              {summary.waterAvg.toString().replace(".", ",")}
-              <span className="text-sm text-muted"> / {waterGoal}</span>
+              {formatLitres(glassesToLitres(summary.waterAvg))}
+              <span className="text-sm text-muted">
+                {" / "}
+                {formatLitres(glassesToLitres(waterGoal))}
+              </span>
             </p>
             <p className="mt-1 text-xs text-muted">günlük su ortalaması</p>
           </div>

@@ -19,11 +19,14 @@ export const DEFAULT_SETTINGS: Settings = {
   postponeLimit: 2,
   weekStartsOn: 1,
   goals: {
+    // Su bardakla sayılır, arayüzde litre görünür: 8 bardak = 2 L.
     water: 8,
     movement: 30,
     sleep: 8,
-    reading: 20,
-    focus: 120,
+    // Okuma ve odak için hedef dayatmıyoruz; sıfır "kendin belirle" demek ve
+    // bu ikisi hedef verilene kadar günün listesine düşmez.
+    reading: 0,
+    focus: 0,
   },
   tracking: {
     water: true,

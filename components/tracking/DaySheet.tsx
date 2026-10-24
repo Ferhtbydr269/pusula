@@ -5,23 +5,48 @@ import { motion } from "framer-motion";
 import { BookOpen, Footprints, Moon, Target } from "lucide-react";
 import type { DailyTracking, ISODate, Mood, Settings } from "@/lib/data/types";
 import { longDateLabel } from "@/lib/date";
-import { cn, debounce, formatMinutes } from "@/lib/utils";
+import {
+  METRICS,
+  formatLitres,
+  glassesToLitres,
+  nextValue,
+  prevValue,
+  type NumericTrackingKey,
+} from "@/lib/tracking";
+import { cn, debounce } from "@/lib/utils";
 import { Sheet } from "@/components/ui/Sheet";
 import { MOODS } from "./DayRibbon";
 import { WaterGlasses } from "./WaterGlasses";
 
-interface MetricProps {
+const METRIC_ICONS: Record<
+  Exclude<NumericTrackingKey, "water">,
+  typeof Footprints
+> = {
+  movement: Footprints,
+  sleep: Moon,
+  reading: BookOpen,
+  focus: Target,
+};
+
+interface MetricRowProps {
   icon: ReactNode;
   label: string;
   value: number;
   goal: number;
-  step: number;
-  /** Değeri gösterirken kullanılacak biçim ("45 dk", "7,5 sa"). */
-  format(value: number): string;
-  onChange(next: number): void;
+  display: string;
+  onDecrease(): void;
+  onIncrease(): void;
 }
 
-function Metric({ icon, label, value, goal, step, format, onChange }: MetricProps) {
+function MetricRow({
+  icon,
+  label,
+  value,
+  goal,
+  display,
+  onDecrease,
+  onIncrease,
+}: MetricRowProps) {
   const reached = goal > 0 && value >= goal;
   const ratio = goal > 0 ? Math.min(1, value / goal) : 0;
 
@@ -36,7 +61,7 @@ function Metric({ icon, label, value, goal, step, format, onChange }: MetricProp
         <div className="flex items-center gap-1">
           <button
             type="button"
-            onClick={() => onChange(Math.max(0, value - step))}
+            onClick={onDecrease}
             disabled={value <= 0}
             aria-label={`${label} azalt`}
             className="grid size-6 place-items-center rounded-md border border-rule text-muted transition-colors hover:border-ink/40 hover:text-ink disabled:opacity-40 disabled:hover:border-rule"
@@ -45,15 +70,15 @@ function Metric({ icon, label, value, goal, step, format, onChange }: MetricProp
           </button>
           <span
             className={cn(
-              "numerals w-16 text-center text-sm",
+              "numerals w-20 text-center text-sm",
               reached ? "text-moss" : value > 0 ? "text-ink" : "text-faint",
             )}
           >
-            {value > 0 ? format(value) : "—"}
+            {value > 0 ? display : "—"}
           </span>
           <button
             type="button"
-            onClick={() => onChange(value + step)}
+            onClick={onIncrease}
             aria-label={`${label} artır`}
             className="grid size-6 place-items-center rounded-md border border-rule text-muted transition-colors hover:border-ink/40 hover:text-ink"
           >
@@ -62,7 +87,7 @@ function Metric({ icon, label, value, goal, step, format, onChange }: MetricProp
         </div>
       </div>
 
-      {goal > 0 && (
+      {goal > 0 ? (
         <div className="mt-1.5 h-[3px] overflow-hidden rounded-full bg-sunk">
           <motion.div
             className="h-full rounded-full"
@@ -72,6 +97,11 @@ function Metric({ icon, label, value, goal, step, format, onChange }: MetricProp
             transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
           />
         </div>
+      ) : (
+        <p className="mt-1 text-2xs text-faint">
+          Hedefi sen belirliyorsun — Ayarlar&apos;dan bir sayı girersen günün
+          listesine düşer.
+        </p>
       )}
     </div>
   );
@@ -115,6 +145,9 @@ export function DaySheet({
   const { tracking: on, goals } = settings;
   const set = (patch: Partial<DailyTracking>) => onChange(date, patch);
 
+  const waterGoal = goals.water;
+  const waterReached = tracking.waterGlasses >= waterGoal;
+
   return (
     <Sheet
       open={open}
@@ -131,30 +164,29 @@ export function DaySheet({
             <div className="flex items-baseline justify-between">
               <span className="text-sm text-muted">Su</span>
               <span className="numerals text-sm text-muted">
-                <span
-                  className={
-                    tracking.waterGlasses >= goals.water ? "text-moss" : "text-ink"
-                  }
-                >
-                  {tracking.waterGlasses}
+                <span className={waterReached ? "text-moss" : "text-ink"}>
+                  {formatLitres(glassesToLitres(tracking.waterGlasses))}
                 </span>
                 {" / "}
-                {goals.water} bardak
+                {formatLitres(glassesToLitres(waterGoal))}
               </span>
             </div>
             <div className="mt-3">
               <WaterGlasses
                 value={tracking.waterGlasses}
-                goal={goals.water}
+                goal={waterGoal}
                 size="md"
                 onChange={(waterGlasses) => set({ waterGlasses })}
               />
             </div>
-            {tracking.waterGlasses >= goals.water && (
+            <p className="mt-2 text-2xs text-faint">
+              Bir bardak 250 ml. Dolu olan son bardağa basınca geri alır.
+            </p>
+            {waterReached && (
               <motion.p
                 initial={{ opacity: 0, y: 4 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="mt-2 text-xs text-moss"
+                className="mt-1.5 text-xs text-moss"
               >
                 Su hedefi tamam.
               </motion.p>
@@ -162,52 +194,25 @@ export function DaySheet({
           </div>
         )}
 
-        {(on.movement || on.sleep || on.reading || on.focus) && (
+        {METRICS.some((m) => m.key !== "water" && on[m.key]) && (
           <div className="flex flex-col gap-5 border-t border-rule pt-6">
-            {on.movement && (
-              <Metric
-                icon={<Footprints size={15} strokeWidth={1.75} />}
-                label="Hareket"
-                value={tracking.movementMin}
-                goal={goals.movement}
-                step={5}
-                format={(v) => formatMinutes(v)}
-                onChange={(movementMin) => set({ movementMin })}
-              />
-            )}
-            {on.sleep && (
-              <Metric
-                icon={<Moon size={15} strokeWidth={1.75} />}
-                label="Uyku"
-                value={tracking.sleepHours}
-                goal={goals.sleep}
-                step={0.5}
-                format={(v) => `${v.toString().replace(".", ",")} sa`}
-                onChange={(sleepHours) => set({ sleepHours })}
-              />
-            )}
-            {on.reading && (
-              <Metric
-                icon={<BookOpen size={15} strokeWidth={1.75} />}
-                label="Okuma"
-                value={tracking.readingMin}
-                goal={goals.reading}
-                step={5}
-                format={(v) => formatMinutes(v)}
-                onChange={(readingMin) => set({ readingMin })}
-              />
-            )}
-            {on.focus && (
-              <Metric
-                icon={<Target size={15} strokeWidth={1.75} />}
-                label="Odak süresi"
-                value={tracking.focusMin}
-                goal={goals.focus}
-                step={15}
-                format={(v) => formatMinutes(v)}
-                onChange={(focusMin) => set({ focusMin })}
-              />
-            )}
+            {METRICS.filter((m) => m.key !== "water" && on[m.key]).map((metric) => {
+              const Icon =
+                METRIC_ICONS[metric.key as Exclude<NumericTrackingKey, "water">];
+              const value = tracking[metric.field];
+              return (
+                <MetricRow
+                  key={metric.key}
+                  icon={<Icon size={15} strokeWidth={1.75} />}
+                  label={metric.label}
+                  value={value}
+                  goal={metric.goalOf(settings)}
+                  display={metric.format(value)}
+                  onDecrease={() => set({ [metric.field]: prevValue(metric, value) })}
+                  onIncrease={() => set({ [metric.field]: nextValue(metric, value) })}
+                />
+              );
+            })}
           </div>
         )}
 
