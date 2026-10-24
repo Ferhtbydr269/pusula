@@ -185,9 +185,15 @@ export function Planner() {
 
   return (
     <div className="flex h-full flex-col px-2 pt-3 pb-2 sm:px-3 sm:pt-4 sm:pb-3">
+      {/* Ayarlardan girilen ad, sağlayıcıdan geleni ezer. Selamlamada yine
+          ilk parçası kullanılıyor ki "İyi günler Ferhat Baydır" olmasın. */}
       <Header
-        name={user.firstName}
-        fullName={user.displayName}
+        name={
+          settings.displayName
+            ? settings.displayName.split(/\s+/)[0]
+            : user.firstName
+        }
+        fullName={settings.displayName || user.displayName}
         photoURL={user.photoURL}
         greeting={greeting()}
         dates={dates}
@@ -293,6 +299,7 @@ export function Planner() {
         categories={categories}
         seriesList={seriesList}
         localMode={mode === "local"}
+        providerName={user.displayName}
         onSave={(patch) => void saveSettings(patch)}
         onRenameCategory={(id, name) => void editCategory(id, { name })}
         onDeleteSeries={(id) => void removeSeries(id)}

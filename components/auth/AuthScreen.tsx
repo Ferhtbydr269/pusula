@@ -155,7 +155,7 @@ export function AuthScreen() {
         transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
         className="w-full max-w-sm"
       >
-        <div className="overflow-hidden rounded-xl border border-rule bg-surface shadow-lift">
+        <div className="aged-page overflow-hidden rounded-xl border border-rule-strong shadow-lift">
           <CompassDial />
 
           <div className="px-7 pt-10 pb-8">

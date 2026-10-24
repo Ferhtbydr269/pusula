@@ -165,7 +165,7 @@ export function WeekView(props: WeekViewProps) {
       onDragEnd={onDragEnd}
       onDragCancel={() => setDragging(null)}
     >
-      <main className="min-h-0 flex-1 overflow-hidden rounded-xl border border-rule bg-surface">
+      <main className="aged-page min-h-0 flex-1 overflow-hidden rounded-xl border border-rule-strong">
         {wide ? (
           /* ── masaüstü: yedi gün tek sayfada ── */
           <div className="grid h-full grid-cols-7">

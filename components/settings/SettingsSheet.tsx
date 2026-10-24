@@ -164,6 +164,8 @@ interface SettingsSheetProps {
   categories: Category[];
   seriesList: Series[];
   localMode: boolean;
+  /** Giriş sağlayıcısından gelen ad — görünen ad alanının yer tutucusu. */
+  providerName: string;
   onSave(patch: Partial<Settings>): void;
   onRenameCategory(id: string, name: string): void;
   onDeleteSeries(id: string): void;
@@ -179,6 +181,7 @@ export function SettingsSheet({
   categories,
   seriesList,
   localMode,
+  providerName,
   onSave,
   onRenameCategory,
   onDeleteSeries,
@@ -242,8 +245,34 @@ export function SettingsSheet({
   return (
     <Sheet open={open} onClose={onClose} title="Ayarlar" width="md">
       <div className="flex flex-col gap-8">
-        {/* ── görünüm ── */}
+        {/* ── profil ── */}
         <section>
+          <SectionTitle>Profil</SectionTitle>
+          <label htmlFor="display-name" className="mt-3 block text-sm text-muted">
+            Görünen ad
+          </label>
+          <input
+            id="display-name"
+            defaultValue={settings.displayName}
+            placeholder={providerName}
+            aria-label="Görünen ad"
+            onBlur={(e) => {
+              const next = e.target.value.trim();
+              if (next !== settings.displayName) onSave({ displayName: next });
+            }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") e.currentTarget.blur();
+            }}
+            className="mt-1.5 w-full rounded-md border border-rule bg-raised px-3 py-2 text-sm outline-none transition-colors focus:border-quince"
+          />
+          <p className="mt-1.5 text-xs leading-relaxed text-faint">
+            Selamlamada ve profil menüsünde bu ad görünür. Boş bırakırsan
+            hesabından gelen ad kullanılır.
+          </p>
+        </section>
+
+        {/* ── görünüm ── */}
+        <section className="border-t border-rule pt-6">
           <SectionTitle>Görünüm</SectionTitle>
           <div className="mt-3 flex rounded-md border border-rule p-0.5">
             {THEMES.map(({ value, label, icon: Icon }) => (

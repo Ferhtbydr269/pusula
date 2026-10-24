@@ -15,6 +15,7 @@ export const DEFAULT_CATEGORIES: Category[] = [
 ];
 
 export const DEFAULT_SETTINGS: Settings = {
+  displayName: "",
   theme: "system",
   postponeLimit: 2,
   weekStartsOn: 1,
@@ -56,6 +57,7 @@ export function emptyTracking(date: ISODate): DailyTracking {
 export function normalizeSettings(raw: unknown): Settings {
   const s = (raw ?? {}) as Partial<Settings>;
   return {
+    displayName: typeof s.displayName === "string" ? s.displayName.trim() : "",
     theme: s.theme ?? DEFAULT_SETTINGS.theme,
     postponeLimit:
       typeof s.postponeLimit === "number" && s.postponeLimit >= 0

@@ -112,6 +112,12 @@ export type TrackingKey =
 export type ThemePreference = "light" | "dark" | "system";
 
 export interface Settings {
+  /**
+   * Kullanıcının kendi seçtiği görünen ad. Boşsa giriş sağlayıcısından gelen
+   * ad kullanılır — Apple'ın gizli e-postasıyla girenlerde o ad
+   * "ystbzky9dr" gibi bir şey olabiliyor.
+   */
+  displayName: string;
   theme: ThemePreference;
   /** Bir görevin kaç kez ertelenebileceği. */
   postponeLimit: number;

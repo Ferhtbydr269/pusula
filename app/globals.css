@@ -5,88 +5,104 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 /* ───────────────────────────────────────────────────────────────
-   "Ayva" — sabah ışığı almış bir defter sayfası.
-   Krem değil, yeşile çalan soluk kağıt. Siyah değil, derin çam mürekkebi.
-   Vurgu: ayva altını — sadece işaretlerde, ilerlemede, bugünün ışığında.
+   "Yanmış kağıt" — çay lekesiyle kül karışımı, parşömen değil.
+   Renk tek tonda değil, katman katman geçiyor ve bu katmanlar
+   uygulamanın yapısına oturuyor:
+
+     merkez (solmuş krem)      → yazı yüzeyi, sayfanın içi
+     orta (kehribar/balmumu)   → vurgu, bugünün ışığı
+     kenara yakın (kestane)    → masanın zemini, sayfanın dışı
+     kenar (kömür)             → kenarlıklar, gölge, sayfanın kıyısı
+     yanığın kızıl izi         → yalnızca kenarlarda beliren parıltı
+
+   Mürekkep eskimiş: siyah değil koyu kahve; kategorilerde yer yer
+   mora yakın soluk gri-maviye dönüyor.
    ─────────────────────────────────────────────────────────────── */
 :root {
-  /* Eski mektup kağıdı: ılık, hafif okra dönmüş bir ekru. Mürekkep yine derin
-     çam yeşili — kağıt ısınırken her şey sepyaya düşmesin, sayfada bir renk
-     kalsın. */
-  --paper: #e9e1d0;
-  --surface: #f4eee2;
-  --surface-raised: #fbf6ec;
-  --surface-sunk: #ded4c0;
+  /* Katmanların uçları — gradyanlar bunlardan karışıyor. */
+  --char: #241a12;
+  --ember: #a8502a;
 
-  --ink: #222b24;
-  --ink-muted: #5e6356;
-  --ink-faint: #8e8b79;
+  --paper: #c6b293;
+  --surface: #f1e6cf;
+  --surface-raised: #f8f0de;
+  --surface-sunk: #ddcdad;
 
-  --rule: #d6cab2;
-  --rule-strong: #c0b296;
+  --ink: #332519;
+  --ink-muted: #6a5640;
+  /* Krem üzerinde 3:1'in altına düşmesin — ipuçları ve birimler bununla yazılıyor. */
+  --ink-faint: #8f7a5e;
+
+  --rule: #cdb997;
+  --rule-strong: #b8a07c;
   /* Sayfanın kendi çizgileri kenarlıklardan ayrı: koyu temada kenarlık kadar
      kontrast olunca ızgara gibi bağırıyorlar. */
-  --rule-faint: #d9cdb6;
+  --rule-faint: #d6c4a5;
 
-  --quince: #a9761c;
-  --quince-soft: #e0c88f;
-  --quince-wash: #f7ecd2;
+  --quince: #a9711a;
+  --quince-soft: #ddb978;
+  --quince-wash: #f7e7c3;
 
-  --moss: #566e3f;
-  --brick: #9e5140;
+  /* Yanık kağıtta yeşil yok; "yapıldı" rengi zeytine çekildi. */
+  --moss: #6b6a30;
+  --brick: #9c4529;
 
-  /* Kategori ailesi: hepsi orta ton, benzer açıklıkta — kimse bağırmıyor. */
-  --cat-petrol: #2d6a68;
-  --cat-plum: #76496b;
-  --cat-ochre: #9c6a1c;
-  --cat-moss: #56753f;
-  --cat-clay: #9d5f4f;
-  --cat-slate: #4a648a;
+  /* Kategori ailesi: hepsi çay–kül–köz ailesinden, benzer açıklıkta. */
+  --cat-petrol: #3f5873;
+  --cat-plum: #76475f;
+  --cat-ochre: #a2681a;
+  --cat-moss: #656b2d;
+  --cat-clay: #8f5330;
+  --cat-slate: #6b5a7a;
 
   /* Bugünün üzerine düşen ışık */
-  --today-light: #fdf4da;
-  --today-edge: #e4cf9f;
+  --today-light: #fbeec9;
+  --today-edge: #cf9a4f;
 
-  --lift: 0 1px 2px rgb(60 48 28 / 0.06), 0 8px 24px -12px rgb(60 48 28 / 0.2);
-  --lift-strong: 0 2px 4px rgb(60 48 28 / 0.07), 0 18px 48px -16px rgb(60 48 28 / 0.28);
+  --lift: 0 1px 2px rgb(36 26 18 / 0.08), 0 8px 24px -12px rgb(36 26 18 / 0.28);
+  --lift-strong: 0 2px 4px rgb(36 26 18 / 0.1), 0 18px 48px -16px rgb(36 26 18 / 0.36);
 
   /* Çizgili sayfanın satır aralığı */
   --rule-step: 2.125rem;
 }
 
 .dark {
-  --paper: #171f1c;
-  --surface: #1e2823;
-  --surface-raised: #26322c;
-  --surface-sunk: #121917;
+  /* Sıcak ama soğumuş: kül altında kalmış kağıt. */
+  --char: #000000;
+  --ember: #c0603a;
 
-  --ink: #e4e9df;
-  --ink-muted: #9caea3;
-  --ink-faint: #6c7d74;
+  --paper: #1a1410;
+  --surface: #241c15;
+  --surface-raised: #2d241a;
+  --surface-sunk: #120e0a;
 
-  --rule: #2e3a34;
-  --rule-strong: #3f4d45;
-  --rule-faint: #242d28;
+  --ink: #ece0ca;
+  --ink-muted: #a8927a;
+  --ink-faint: #7b6752;
 
-  --quince: #dcac51;
-  --quince-soft: #6d5527;
-  --quince-wash: #2b2a1e;
+  --rule: #3a2e22;
+  --rule-strong: #4f4030;
+  --rule-faint: #2e241b;
 
-  --moss: #86a86a;
-  --brick: #cc8276;
+  --quince: #d7a44a;
+  --quince-soft: #6b4f1f;
+  --quince-wash: #2f2517;
 
-  --cat-petrol: #5aa3a0;
-  --cat-plum: #b183a7;
-  --cat-ochre: #d2a44f;
-  --cat-moss: #8fb173;
-  --cat-clay: #cf9384;
-  --cat-slate: #87a3c8;
+  --moss: #9a9a4e;
+  --brick: #c87152;
 
-  --today-light: #2c3025;
-  --today-edge: #4d4729;
+  --cat-petrol: #7c9ab8;
+  --cat-plum: #b88aa2;
+  --cat-ochre: #d9a44f;
+  --cat-moss: #a6ab62;
+  --cat-clay: #cf8b63;
+  --cat-slate: #a697bb;
 
-  --lift: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -12px rgb(0 0 0 / 0.6);
-  --lift-strong: 0 2px 4px rgb(0 0 0 / 0.35), 0 18px 48px -16px rgb(0 0 0 / 0.7);
+  --today-light: #332716;
+  --today-edge: #5c441f;
+
+  --lift: 0 1px 2px rgb(0 0 0 / 0.35), 0 8px 24px -12px rgb(0 0 0 / 0.65);
+  --lift-strong: 0 2px 4px rgb(0 0 0 / 0.4), 0 18px 48px -16px rgb(0 0 0 / 0.75);
 }
 
 @theme inline {
@@ -244,6 +260,21 @@
       var(--rule-faint) var(--rule-step)
     );
     background-position: 0 0;
+  }
+
+  /**
+   * Yanmış kağıdın katmanları. Merkez solmuş krem; dışa doğru önce yanığın
+   * kızıl izi, en kenarda kül belirir. Hepsi çok düşük yoğunlukta — amaç
+   * efekt değil, rengin tek tonda durmaması.
+   */
+  .aged-page {
+    background-color: var(--surface);
+    background-image: radial-gradient(
+      132% 104% at 50% 38%,
+      transparent 46%,
+      color-mix(in oklab, var(--ember) 7%, transparent) 76%,
+      color-mix(in oklab, var(--char) 18%, transparent) 100%
+    );
   }
 
   /* Bugünün sütunu kutulanmıyor — üzerine ışık düşüyor. Işık yukarıda güçlü,
