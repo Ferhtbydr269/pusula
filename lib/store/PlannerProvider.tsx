@@ -195,6 +195,10 @@ export function PlannerProvider({ children }: { children: ReactNode }) {
           window.matchMedia("(prefers-color-scheme: dark)").matches);
       document.documentElement.classList.toggle("dark", dark);
       document.documentElement.style.colorScheme = dark ? "dark" : "light";
+      // Tarayıcı çubuğu da uygulamanın temasını izlesin.
+      document
+        .querySelector('meta[name="theme-color"]')
+        ?.setAttribute("content", dark ? "#1a1410" : "#c6b293");
     };
     apply();
     try {

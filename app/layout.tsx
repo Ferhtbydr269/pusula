@@ -30,14 +30,18 @@ export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#c6b293" },
-    { media: "(prefers-color-scheme: dark)", color: "#1a1410" },
-  ],
+  /* Tek değer: tarayıcı çubuğu artık işletim sistemini değil uygulamanın
+     kendi temasını izliyor. Koyu temaya geçildiğinde bu etiketi önyükleme
+     betiği ve tema etkisi güncelliyor — yoksa açık uygulamanın üstünde koyu
+     bir çubuk kalıyordu. */
+  themeColor: "#c6b293",
 };
 
 /* Tema sınıfını ilk boyamadan önce koy — açılışta beyaz/siyah çakması olmasın. */
-const themeBootstrap = `(function(){try{var t=localStorage.getItem("hp-theme")||"system";var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);document.documentElement.style.colorScheme=d?"dark":"light";}catch(e){}})();`;
+/* Kayıtlı tercih yoksa açık mod — telefonu koyu moddaki ziyaretçi de
+   uygulamayı açık görsün. Yalnızca kullanıcı "Sistem"i kendi seçtiyse
+   işletim sistemine bakılır. */
+const themeBootstrap = `(function(){try{var t=localStorage.getItem("hp-theme")||"light";var d=t==="dark"||(t==="system"&&window.matchMedia("(prefers-color-scheme: dark)").matches);document.documentElement.classList.toggle("dark",d);document.documentElement.style.colorScheme=d?"dark":"light";var m=document.querySelector('meta[name="theme-color"]');if(m)m.setAttribute("content",d?"#1a1410":"#c6b293");}catch(e){}})();`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

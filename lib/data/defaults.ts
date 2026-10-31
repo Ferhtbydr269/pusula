@@ -16,7 +16,11 @@ export const DEFAULT_CATEGORIES: Category[] = [
 
 export const DEFAULT_SETTINGS: Settings = {
   displayName: "",
-  theme: "system",
+  /* Açık mod varsayılan. "Sistem" olduğunda telefonu koyu moddaki biri
+     uygulamaya ilk kez koyu temayla giriyordu; Pusula'nın kimliği yanmış
+     kağıt ve ilk izlenimin o olması gerekiyor. İsteyen Ayarlar'dan koyuya
+     ya da sisteme geçebilir. */
+  theme: "light",
   postponeLimit: 2,
   weekStartsOn: 1,
   goals: {
